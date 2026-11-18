@@ -7,14 +7,18 @@ import JadwalSesi from './components/siswa/JadwalSesi';
 import ProgresBelajar from './components/siswa/ProgresBelajar';
 import ProfilSiswa from './components/siswa/ProfilSiswa';
 import BookingModal from './components/siswa/BookingModal';
+import AuthModal from './components/auth/AuthModal';
 import MitraDashboard from './components/mitra/MitraDashboard';
 import AdminDashboard from './components/admin/AdminDashboard';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { INSTRUCTORS, PACKAGES } from './data/mockData';
 
-export default function App() {
-  const [currentRole, setCurrentRole] = useState('siswa'); // 'siswa' | 'mitra' | 'admin'
+function AppContent() {
+  const { role, updateRoleLocally } = useAuth();
+  const [currentRole, setCurrentRole] = useState(role || 'siswa'); // 'siswa' | 'mitra' | 'admin'
   const [activeTab, setActiveTab] = useState('home'); // 'home' | 'search' | 'schedule' | 'progress' | 'profile'
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
   
   // Booking modal state
   const [bookingModal, setBookingModal] = useState({
@@ -36,10 +40,15 @@ export default function App() {
   };
 
   const handleBookingSuccess = (bookingData) => {
-    // Navigate to schedule tab to show the booked session
     setTimeout(() => {
       setActiveTab('schedule');
     }, 1200);
+  };
+
+  const handleRoleChange = (newRole) => {
+    setCurrentRole(newRole);
+    updateRoleLocally(newRole);
+    if (newRole === 'siswa') setActiveTab('home');
   };
 
   return (
@@ -49,13 +58,11 @@ export default function App() {
       <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-red-600/8 rounded-full blur-[140px] pointer-events-none z-0" />
       <div className="fixed top-1/2 right-10 w-72 h-72 bg-blue-600/8 rounded-full blur-[120px] pointer-events-none z-0" />
 
-      {/* Main Header with Role Switcher */}
+      {/* Main Header with Role Switcher & Auth */}
       <Header
         currentRole={currentRole}
-        setCurrentRole={(role) => {
-          setCurrentRole(role);
-          if (role === 'siswa') setActiveTab('home');
-        }}
+        setCurrentRole={handleRoleChange}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -110,16 +117,30 @@ export default function App() {
         onBookingSuccess={handleBookingSuccess}
       />
 
+      {/* Supabase Auth Modal (Login / Register) */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+      />
+
       {/* Floating Dark Glass Navbar with Neon Arch (Video V5) */}
       <NavbarV5
         activeTab={activeTab}
         setActiveTab={(tab) => {
-          if (currentRole !== 'siswa') setCurrentRole('siswa');
+          if (currentRole !== 'siswa') handleRoleChange('siswa');
           setActiveTab(tab);
         }}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
