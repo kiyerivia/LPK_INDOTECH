@@ -1,19 +1,42 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'models/app_models.dart';
 import 'theme/app_theme.dart';
+import 'widgets/neon_navbar.dart';
 import 'widgets/auth_modal.dart';
-import 'screens/home_screen.dart';
-import 'screens/search_screen.dart';
-import 'screens/schedule_screen.dart';
-import 'screens/report_screen.dart';
-import 'screens/profile_screen.dart';
+import 'widgets/booking_sheet.dart';
+import 'screens/siswa/siswa_home_screen.dart';
+import 'screens/siswa/siswa_search_screen.dart';
+import 'screens/siswa/siswa_schedule_screen.dart';
+import 'screens/siswa/siswa_report_screen.dart';
+import 'screens/siswa/siswa_profile_screen.dart';
+import 'screens/mitra/mitra_order_screen.dart';
+import 'screens/mitra/mitra_eval_screen.dart';
+import 'screens/mitra/mitra_wallet_screen.dart';
+import 'screens/mitra/mitra_profile_screen.dart';
+import 'screens/admin/admin_overview_screen.dart';
+import 'screens/admin/admin_mitra_screen.dart';
+import 'screens/admin/admin_siswa_screen.dart';
+import 'screens/admin/admin_config_screen.dart';
 
-void main() {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
-    statusBarIconBrightness: Brightness.light,
+    statusBarIconBrightness: Brightness.dark,
   ));
+
+  // Connect to Supabase (graceful fallback to Demo Mode if offline)
+  try {
+    await Supabase.initialize(
+      url: 'https://cmtvzjcjinivkquhheqo.supabase.co',
+      publishableKey: 'sb_publishable_xCwyI9klXX30unaDht3TPw_KidrW5o2',
+    );
+  } catch (e) {
+    debugPrint('Supabase init notice: $e');
+  }
+
   runApp(const LPKIndotechApp());
 }
 
@@ -23,351 +46,452 @@ class LPKIndotechApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'LPK INDOTECH',
+      title: 'LPK INDOTECH — Driving Partner',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark,
-      home: const MainShell(),
+      theme: AppTheme.light,
+      home: const DrivingPartnerShell(),
     );
   }
 }
 
-// ── Main Shell with Floating NavBar ─────────────────────────────────────────
-
-class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+class DrivingPartnerShell extends StatefulWidget {
+  const DrivingPartnerShell({super.key});
 
   @override
-  State<MainShell> createState() => _MainShellState();
+  State<DrivingPartnerShell> createState() => _DrivingPartnerShellState();
 }
 
-class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
-  bool _isLoggedIn = false;
-  String _userName = 'Tamu';
-  String _userRole = 'siswa';
+class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
+  final AppState _appState = AppState();
+  int _siswaTab = 0;
+  int _mitraTab = 0;
+  int _adminTab = 0;
 
-  final _navItems = const [
-    _NavItem(icon: Icons.home_rounded, label: 'Beranda'),
-    _NavItem(icon: Icons.search_rounded, label: 'Cari'),
-    _NavItem(icon: Icons.calendar_month_rounded, label: 'Jadwal'),
-    _NavItem(icon: Icons.bar_chart_rounded, label: 'Rapor'),
-    _NavItem(icon: Icons.person_rounded, label: 'Profil'),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _appState.addListener(_onStateChanged);
+  }
 
-  void _showAuthModal() async {
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
+  @override
+  void dispose() {
+    _appState.removeListener(_onStateChanged);
+    _appState.dispose();
+    super.dispose();
+  }
+
+  void _onStateChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _openAuth() {
+    showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const AuthModal(),
+      builder: (_) => AuthModal(appState: _appState),
     );
-    if (result != null) {
-      setState(() {
-        _isLoggedIn = true;
-        _userName = result['nama'] ?? 'Pengguna';
-        _userRole = result['role'] ?? 'siswa';
-      });
+  }
+
+  Future<void> _openBooking(Instructor instructor, [DrivingPackage? pkg]) async {
+    final booked = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => BookingSheet(
+        appState: _appState,
+        instructor: instructor,
+        initialPackage: pkg,
+      ),
+    );
+    if (booked == true && mounted) {
+      setState(() => _siswaTab = 2);
     }
   }
 
-  void _logout() {
+  int get _activeTabIndex {
+    switch (_appState.currentRole) {
+      case UserRole.siswa:
+        return _siswaTab;
+      case UserRole.mitra:
+        return _mitraTab;
+      case UserRole.admin:
+        return _adminTab;
+    }
+  }
+
+  void _onTabSelected(int index) {
     setState(() {
-      _isLoggedIn = false;
-      _userName = 'Tamu';
-      _userRole = 'siswa';
-      _currentIndex = 0;
+      switch (_appState.currentRole) {
+        case UserRole.siswa:
+          _siswaTab = index;
+          break;
+        case UserRole.mitra:
+          _mitraTab = index;
+          break;
+        case UserRole.admin:
+          _adminTab = index;
+          break;
+      }
     });
   }
 
-  Widget _buildPage(int index) {
-    switch (index) {
-      case 0:
-        return HomeScreen(
-          userName: _isLoggedIn ? _userName : 'Tamu',
-          onSearchTap: () => setState(() => _currentIndex = 1),
-        );
-      case 1:
-        return const SearchScreen();
-      case 2:
-        return _isLoggedIn ? const ScheduleScreen() : _loginPrompt();
-      case 3:
-        return _isLoggedIn ? const ReportScreen() : _loginPrompt();
-      case 4:
-        return _isLoggedIn
-            ? ProfileScreen(userName: _userName, userRole: _userRole, onLogout: _logout)
-            : _loginPrompt();
-      default:
-        return const SizedBox.shrink();
+  Color get _roleAccent {
+    switch (_appState.currentRole) {
+      case UserRole.siswa:
+        return AppColors.primary;
+      case UserRole.mitra:
+        return AppColors.emerald;
+      case UserRole.admin:
+        return AppColors.purple;
     }
   }
 
-  Widget _loginPrompt() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primary, AppTheme.primaryDark],
-                ),
-                shape: BoxShape.circle,
-              ),
-              alignment: Alignment.center,
-              child: const Icon(Icons.lock_outline, color: Colors.white, size: 36),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Masuk Dulu Yuk!',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Login atau daftar untuk mengakses fitur ini',
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppTheme.primary, AppTheme.primaryDark],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary.withOpacity(0.4),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: ElevatedButton.icon(
-                onPressed: _showAuthModal,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  minimumSize: const Size(200, 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                icon: const Icon(Icons.login, color: Colors.white),
-                label: const Text('Masuk / Daftar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
+  List<NavTabItem> get _currentTabs {
+    switch (_appState.currentRole) {
+      case UserRole.siswa:
+        return const [
+          NavTabItem(label: 'Beranda', icon: Icons.home_rounded),
+          NavTabItem(label: 'Cari', icon: Icons.radar_rounded),
+          NavTabItem(label: 'Jadwal', icon: Icons.calendar_month_rounded),
+          NavTabItem(label: 'Rapor', icon: Icons.workspace_premium_rounded),
+          NavTabItem(label: 'Profil', icon: Icons.person_rounded),
+        ];
+      case UserRole.mitra:
+        final pendingOrders = _appState.orders.where((o) => o.stage == TripStage.pending).length;
+        return [
+          NavTabItem(label: 'Order', icon: Icons.local_taxi_rounded, badgeCount: pendingOrders),
+          const NavTabItem(label: 'Nilai', icon: Icons.fact_check_rounded),
+          const NavTabItem(label: 'Dompet', icon: Icons.account_balance_wallet_rounded),
+          const NavTabItem(label: 'Mitra', icon: Icons.verified_user_rounded),
+        ];
+      case UserRole.admin:
+        final pendingKyc = _appState.pendingMitras.where((m) => m.status == 'pending').length;
+        return [
+          const NavTabItem(label: 'Omzet', icon: Icons.analytics_rounded),
+          NavTabItem(label: 'Mitra', icon: Icons.how_to_reg_rounded, badgeCount: pendingKyc),
+          const NavTabItem(label: 'Siswa', icon: Icons.school_rounded),
+          const NavTabItem(label: 'Atur', icon: Icons.tune_rounded),
+        ];
+    }
+  }
+
+  Widget _buildActiveScreen() {
+    switch (_appState.currentRole) {
+      case UserRole.siswa:
+        switch (_siswaTab) {
+          case 0:
+            return SiswaHomeScreen(
+              appState: _appState,
+              onOpenSearch: () => setState(() => _siswaTab = 1),
+              onOpenSchedule: () => setState(() => _siswaTab = 2),
+              onOpenReport: () => setState(() => _siswaTab = 3),
+              onBook: _openBooking,
+            );
+          case 1:
+            return SiswaSearchScreen(appState: _appState, onBook: (inst) => _openBooking(inst));
+          case 2:
+            return SiswaScheduleScreen(
+              appState: _appState,
+              onBookMore: () => setState(() => _siswaTab = 1),
+            );
+          case 3:
+            return SiswaReportScreen(appState: _appState);
+          default:
+            return SiswaProfileScreen(appState: _appState, onOpenAuth: _openAuth);
+        }
+
+      case UserRole.mitra:
+        switch (_mitraTab) {
+          case 0:
+            return MitraOrderScreen(
+              appState: _appState,
+              onGoToEval: () => setState(() => _mitraTab = 1),
+            );
+          case 1:
+            return MitraEvalScreen(appState: _appState);
+          case 2:
+            return MitraWalletScreen(appState: _appState);
+          default:
+            return MitraProfileScreen(appState: _appState);
+        }
+
+      case UserRole.admin:
+        switch (_adminTab) {
+          case 0:
+            return AdminOverviewScreen(appState: _appState);
+          case 1:
+            return AdminMitraScreen(appState: _appState);
+          case 2:
+            return AdminSiswaScreen(appState: _appState);
+          default:
+            return AdminConfigScreen(appState: _appState);
+        }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true,
-      appBar: _buildAppBar(),
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-        child: KeyedSubtree(
-          key: ValueKey(_currentIndex),
-          child: _buildPage(_currentIndex),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFF6F9FF),
+              Color(0xFFEDF4FD),
+              Color(0xFFF3F6FC),
+            ],
+          ),
+        ),
+        child: Stack(
+          children: [
+            // Soft Aurora Pastel Futuristic Glows
+            Positioned(
+              top: -90,
+              left: -70,
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      _roleAccent.withValues(alpha: 0.16),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 140,
+              right: -90,
+              child: Container(
+                width: 260,
+                height: 260,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.primaryLight.withValues(alpha: 0.14),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 60,
+              left: -60,
+              child: Container(
+                width: 240,
+                height: 240,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: RadialGradient(
+                    colors: [
+                      AppColors.emerald.withValues(alpha: 0.10),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // Main Content Column
+            SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  _buildGlassyHeader(),
+                  _buildRoleSwitcherBar(),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: KeyedSubtree(
+                        key: ValueKey('${_appState.currentRole.name}-$_activeTabIndex'),
+                        child: _buildActiveScreen(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Floating Frosted Pearl Glass Navbar with Neon Arch (Video V5)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: NeonArchNavbar(
+                tabs: _currentTabs,
+                currentIndex: _activeTabIndex,
+                accentColor: _roleAccent,
+                onTabSelected: _onTabSelected,
+              ),
+            ),
+          ],
         ),
       ),
-      bottomNavigationBar: _buildFloatingNavBar(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar() {
-    return AppBar(
-      toolbarHeight: 64,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              AppTheme.bgDark.withOpacity(0.95),
-              AppTheme.bgDark.withOpacity(0.0),
-            ],
-          ),
-        ),
-      ),
-      title: Row(
+  Widget _buildGlassyHeader() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryDark]),
-              borderRadius: BorderRadius.circular(10),
+              gradient: LinearGradient(
+                colors: [_roleAccent, Color.lerp(_roleAccent, Colors.cyanAccent, 0.25)!],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(13),
+              boxShadow: [
+                BoxShadow(
+                  color: _roleAccent.withValues(alpha: 0.28),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.directions_car, color: Colors.white, size: 20),
+            child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 21),
           ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'LPK INDOTECH',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-              ),
-              Text(
-                _navItems[_currentIndex].label,
-                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
-              ),
-            ],
-          ),
-        ],
-      ),
-      actions: [
-        if (!_isLoggedIn)
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: TextButton(
-              onPressed: _showAuthModal,
-              style: TextButton.styleFrom(
-                backgroundColor: AppTheme.primary.withOpacity(0.15),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              ),
-              child: const Text('Masuk', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600)),
-            ),
-          )
-        else
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                RichText(
+                  text: TextSpan(
+                    text: 'LPK ',
+                    style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w900, fontSize: 15),
                     children: [
-                      Container(
-                        width: 22,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryDark]),
-                          shape: BoxShape.circle,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _userName.split(' ').first,
-                        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
-                      ),
+                      TextSpan(text: 'DRIVING PARTNER', style: TextStyle(color: _roleAccent)),
                     ],
                   ),
+                ),
+                const Text(
+                  'Kursus Mengemudi & Mitra Online • Purwokerto',
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
-      ],
+          GestureDetector(
+            onTap: _openAuth,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.85),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.white, width: 1.2),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.07),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    _appState.isLoggedIn ? Icons.verified_user_rounded : Icons.account_circle_rounded,
+                    size: 16,
+                    color: _appState.isLoggedIn ? AppColors.emerald : _roleAccent,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    _appState.isLoggedIn ? _appState.userName.split(' ').first : 'Masuk',
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildFloatingNavBar() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-      child: Container(
-        height: 68,
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E).withOpacity(0.95),
-          borderRadius: BorderRadius.circular(34),
-          border: Border.all(color: Colors.white.withOpacity(0.12)),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primary.withOpacity(0.25),
-              blurRadius: 24,
-              spreadRadius: -4,
-              offset: const Offset(0, 4),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.4),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: List.generate(_navItems.length, (i) {
-            final selected = i == _currentIndex;
-            return GestureDetector(
-              onTap: () => setState(() => _currentIndex = i),
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOut,
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                decoration: selected
-                    ? BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            AppTheme.primary.withOpacity(0.25),
-                            AppTheme.primaryDark.withOpacity(0.15),
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(22),
-                        border: Border.all(color: AppTheme.primary.withOpacity(0.4)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primary.withOpacity(0.3),
-                            blurRadius: 12,
-                            spreadRadius: -2,
-                          ),
-                        ],
-                      )
-                    : null,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _navItems[i].icon,
-                      color: selected ? AppTheme.primary : AppTheme.textSecondary,
-                      size: selected ? 22 : 20,
+  Widget _buildRoleSwitcherBar() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 2, 16, 6),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white, width: 1.2),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E3A8A).withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _rolePill(UserRole.siswa, 'Siswa', Icons.school_rounded, AppColors.primary),
+          _rolePill(UserRole.mitra, 'Mitra Driver', Icons.local_taxi_rounded, AppColors.emerald),
+          _rolePill(UserRole.admin, 'Admin LPK', Icons.admin_panel_settings_rounded, AppColors.purple),
+        ],
+      ),
+    );
+  }
+
+  Widget _rolePill(UserRole role, String label, IconData icon, Color color) {
+    final active = _appState.currentRole == role;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _appState.setRole(role),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          decoration: BoxDecoration(
+            gradient: active
+                ? LinearGradient(colors: [color, Color.lerp(color, Colors.cyanAccent, 0.2)!])
+                : null,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: active
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: 0.28),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
                     ),
-                    if (selected) ...[
-                      const SizedBox(width: 6),
-                      Text(
-                        _navItems[i].label,
-                        style: const TextStyle(
-                          color: AppTheme.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ],
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 14, color: active ? Colors.white : AppColors.textMuted),
+              const SizedBox(width: 5),
+              Flexible(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: active ? Colors.white : AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                  ),
                 ),
               ),
-            );
-          }),
+            ],
+          ),
         ),
       ),
     );
   }
-}
-
-class _NavItem {
-  final IconData icon;
-  final String label;
-  const _NavItem({required this.icon, required this.label});
 }

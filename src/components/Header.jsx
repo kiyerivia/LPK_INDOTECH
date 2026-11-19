@@ -30,8 +30,8 @@ export default function Header({ currentRole, setCurrentRole, onOpenAuth, unread
           </div>
         </div>
 
-        {/* Role Switcher (Simulasi Cepat untuk Presentasi/Demo) */}
-        <div className="hidden sm:flex items-center gap-1 bg-zinc-900/90 border border-white/10 rounded-full p-1 text-xs">
+        {/* Role Switcher (Simulasi Cepat untuk Presentasi/Demo - Desktop & Mobile) */}
+        <div className="flex items-center gap-1 bg-zinc-900/90 border border-white/10 rounded-full p-1 text-xs">
           <button
             onClick={() => setCurrentRole('siswa')}
             className={`px-2.5 py-1 rounded-full text-[11px] font-medium transition-all cursor-pointer ${
