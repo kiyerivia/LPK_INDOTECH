@@ -1,138 +1,277 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'models/models.dart';
+import 'package:flutter/services.dart';
 import 'theme/app_theme.dart';
-import 'widgets/neon_navbar.dart';
-import 'widgets/booking_sheet.dart';
 import 'widgets/auth_modal.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/schedule_screen.dart';
-import 'screens/progress_screen.dart';
+import 'screens/report_screen.dart';
 import 'screens/profile_screen.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Supabase using user's real project credentials
-  try {
-    await Supabase.initialize(
-      url: 'https://cmtvzjcjinivkquhheqo.supabase.co',
-      anonKey: 'sb_publishable_xCwyI9klXX30unaDht3TPw_KidrW5o2',
-    );
-  } catch (e) {
-    debugPrint('Supabase init warning: $e');
-  }
-
-  runApp(const LpkIndotechApp());
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+  ));
+  runApp(const LPKIndotechApp());
 }
 
-class LpkIndotechApp extends StatelessWidget {
-  const LpkIndotechApp({super.key});
+class LPKIndotechApp extends StatelessWidget {
+  const LPKIndotechApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'LPK INDOTECH Driving Partner',
+      title: 'LPK INDOTECH',
       debugShowCheckedModeBanner: false,
-      theme: buildAppTheme(),
-      home: const MainNavigationWrapper(),
+      theme: AppTheme.dark,
+      home: const MainShell(),
     );
   }
 }
 
-class MainNavigationWrapper extends StatefulWidget {
-  const MainNavigationWrapper({super.key});
+// ── Main Shell with Floating NavBar ─────────────────────────────────────────
+
+class MainShell extends StatefulWidget {
+  const MainShell({super.key});
 
   @override
-  State<MainNavigationWrapper> createState() => _MainNavigationWrapperState();
+  State<MainShell> createState() => _MainShellState();
 }
 
-class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
+class _MainShellState extends State<MainShell> {
   int _currentIndex = 0;
-  String _searchQuery = '';
-  bool _showSearchPopup = false;
-  final TextEditingController _searchController = TextEditingController();
+  bool _isLoggedIn = false;
+  String _userName = 'Tamu';
+  String _userRole = 'siswa';
 
-  void _openBookingSheet(Instructor instructor, [DrivingPackage? pkg]) {
-    showModalBottomSheet(
+  final _navItems = const [
+    _NavItem(icon: Icons.home_rounded, label: 'Beranda'),
+    _NavItem(icon: Icons.search_rounded, label: 'Cari'),
+    _NavItem(icon: Icons.calendar_month_rounded, label: 'Jadwal'),
+    _NavItem(icon: Icons.bar_chart_rounded, label: 'Rapor'),
+    _NavItem(icon: Icons.person_rounded, label: 'Profil'),
+  ];
+
+  void _showAuthModal() async {
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => BookingBottomSheet(
-        instructor: instructor,
-        selectedPackage: pkg,
-      ),
+      builder: (_) => const AuthModal(),
     );
+    if (result != null) {
+      setState(() {
+        _isLoggedIn = true;
+        _userName = result['nama'] ?? 'Pengguna';
+        _userRole = result['role'] ?? 'siswa';
+      });
+    }
   }
 
-  void _openAuthModal() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const AuthModalSheet(),
+  void _logout() {
+    setState(() {
+      _isLoggedIn = false;
+      _userName = 'Tamu';
+      _userRole = 'siswa';
+      _currentIndex = 0;
+    });
+  }
+
+  Widget _buildPage(int index) {
+    switch (index) {
+      case 0:
+        return HomeScreen(
+          userName: _isLoggedIn ? _userName : 'Tamu',
+          onSearchTap: () => setState(() => _currentIndex = 1),
+        );
+      case 1:
+        return const SearchScreen();
+      case 2:
+        return _isLoggedIn ? const ScheduleScreen() : _loginPrompt();
+      case 3:
+        return _isLoggedIn ? const ReportScreen() : _loginPrompt();
+      case 4:
+        return _isLoggedIn
+            ? ProfileScreen(userName: _userName, userRole: _userRole, onLogout: _logout)
+            : _loginPrompt();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
+
+  Widget _loginPrompt() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.primary, AppTheme.primaryDark],
+                ),
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: const Icon(Icons.lock_outline, color: Colors.white, size: 36),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Masuk Dulu Yuk!',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Login atau daftar untuk mengakses fitur ini',
+              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.primary, AppTheme.primaryDark],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(14),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.4),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: _showAuthModal,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  minimumSize: const Size(200, 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                icon: const Icon(Icons.login, color: Colors.white),
+                label: const Text('Masuk / Daftar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Ambient Glow Background Circles (Glassy Atmosphere)
-          Positioned(
-            top: -60,
-            left: -60,
-            child: Container(
-              width: 240,
-              height: 240,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withOpacity(0.12),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 120,
-            right: -60,
-            child: Container(
-              width: 240,
-              height: 240,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.blueAccent.withOpacity(0.08),
-              ),
-            ),
-          ),
+      extendBody: true,
+      appBar: _buildAppBar(),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+        child: KeyedSubtree(
+          key: ValueKey(_currentIndex),
+          child: _buildPage(_currentIndex),
+        ),
+      ),
+      bottomNavigationBar: _buildFloatingNavBar(),
+    );
+  }
 
-          // Main Screen Content
-          SafeArea(
-            bottom: false,
-            child: Column(
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      toolbarHeight: 64,
+      flexibleSpace: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              AppTheme.bgDark.withOpacity(0.95),
+              AppTheme.bgDark.withOpacity(0.0),
+            ],
+          ),
+        ),
+      ),
+      title: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryDark]),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.directions_car, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'LPK INDOTECH',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+              ),
+              Text(
+                _navItems[_currentIndex].label,
+                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+              ),
+            ],
+          ),
+        ],
+      ),
+      actions: [
+        if (!_isLoggedIn)
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: TextButton(
+              onPressed: _showAuthModal,
+              style: TextButton.styleFrom(
+                backgroundColor: AppTheme.primary.withOpacity(0.15),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              ),
+              child: const Text('Masuk', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600)),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                _buildHeader(),
-                Expanded(
-                  child: IndexedStack(
-                    index: _currentIndex,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      HomeScreen(
-                        onBookInstructor: (inst, pkg) => _openBookingSheet(inst, pkg),
-                        onNavigateToSearch: () => setState(() => _currentIndex = 1),
-                        onNavigateToSchedule: () => setState(() => _currentIndex = 2),
-                        onNavigateToProgress: () => setState(() => _currentIndex = 3),
+                      Container(
+                        width: 22,
+                        height: 22,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryDark]),
+                          shape: BoxShape.circle,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          _userName.isNotEmpty ? _userName[0].toUpperCase() : 'U',
+                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      SearchScreen(
-                        onBookInstructor: (inst) => _openBookingSheet(inst),
-                        searchQuery: _searchQuery,
-                      ),
-                      ScheduleScreen(
-                        onBookMore: () => setState(() => _currentIndex = 1),
-                      ),
-                      const ProgressScreen(),
-                      ProfileScreen(
-                        onOpenAuth: _openAuthModal,
+                      const SizedBox(width: 6),
+                      Text(
+                        _userName.split(' ').first,
+                        style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13),
                       ),
                     ],
                   ),
@@ -140,146 +279,95 @@ class _MainNavigationWrapperState extends State<MainNavigationWrapper> {
               ],
             ),
           ),
+      ],
+    );
+  }
 
-          // Floating Search Pill (Directly from Video V5 Frame 04)
-          if (_showSearchPopup && _currentIndex == 1)
-            Positioned(
-              bottom: 96,
-              left: 24,
-              right: 24,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xF018181C),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: Colors.white.withOpacity(0.15)),
-                  boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20),
-                  ],
-                ),
+  Widget _buildFloatingNavBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: Container(
+        height: 68,
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A2E).withOpacity(0.95),
+          borderRadius: BorderRadius.circular(34),
+          border: Border.all(color: Colors.white.withOpacity(0.12)),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withOpacity(0.25),
+              blurRadius: 24,
+              spreadRadius: -4,
+              offset: const Offset(0, 4),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(_navItems.length, (i) {
+            final selected = i == _currentIndex;
+            return GestureDetector(
+              onTap: () => setState(() => _currentIndex = i),
+              behavior: HitTestBehavior.opaque,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOut,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: selected
+                    ? BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            AppTheme.primary.withOpacity(0.25),
+                            AppTheme.primaryDark.withOpacity(0.15),
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: AppTheme.primary.withOpacity(0.4)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withOpacity(0.3),
+                            blurRadius: 12,
+                            spreadRadius: -2,
+                          ),
+                        ],
+                      )
+                    : null,
                 child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.search_rounded, color: AppColors.primary, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: TextField(
-                        controller: _searchController,
-                        onChanged: (val) => setState(() => _searchQuery = val),
-                        style: const TextStyle(fontSize: 12, color: Colors.white),
-                        decoration: const InputDecoration(
-                          hintText: 'Cari instruktur, lokasi Purwokerto...',
-                          hintStyle: TextStyle(color: AppColors.textSubtle, fontSize: 11),
-                          border: InputBorder.none,
-                          isDense: true,
+                    Icon(
+                      _navItems[i].icon,
+                      color: selected ? AppTheme.primary : AppTheme.textSecondary,
+                      size: selected ? 22 : 20,
+                    ),
+                    if (selected) ...[
+                      const SizedBox(width: 6),
+                      Text(
+                        _navItems[i].label,
+                        style: const TextStyle(
+                          color: AppTheme.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                    if (_searchQuery.isNotEmpty)
-                      GestureDetector(
-                        onTap: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = '');
-                        },
-                        child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textMuted),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-
-          // Floating Glassy Neon Arch Navbar (Video V5)
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: NeonArchNavbar(
-              currentIndex: _currentIndex,
-              onTabSelected: (index) {
-                setState(() {
-                  _currentIndex = index;
-                  if (index != 1) _showSearchPopup = false;
-                });
-              },
-              onSearchTriggered: () {
-                setState(() => _showSearchPopup = !_showSearchPopup);
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppColors.background.withOpacity(0.8),
-        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.06))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight]),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(color: AppColors.primary.withOpacity(0.4), blurRadius: 10),
-                  ],
-                ),
-                child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 10),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: const TextSpan(
-                      text: 'LPK ',
-                      style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: Colors.white),
-                      children: [
-                        TextSpan(text: 'INDOTECH', style: TextStyle(color: AppColors.primary)),
-                      ],
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      Container(width: 5, height: 5, decoration: const BoxDecoration(color: AppColors.emerald, shape: BoxShape.circle)),
-                      const SizedBox(width: 4),
-                      const Text('Purwokerto Utara', style: TextStyle(fontSize: 10, color: AppColors.textMuted)),
                     ],
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ],
-          ),
-
-          // Auth / Profile Button
-          GestureDetector(
-            onTap: _openAuthModal,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.account_circle_rounded, size: 16, color: AppColors.primaryLight),
-                  SizedBox(width: 4),
-                  Text('Akun', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.white)),
-                ],
-              ),
-            ),
-          ),
-        ],
+            );
+          }),
+        ),
       ),
     );
   }
+}
+
+class _NavItem {
+  final IconData icon;
+  final String label;
+  const _NavItem({required this.icon, required this.label});
 }

@@ -1,359 +1,209 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../models/data.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common.dart';
+import '../widgets/booking_sheet.dart';
 
 class SearchScreen extends StatefulWidget {
-  final Function(Instructor) onBookInstructor;
-  final String searchQuery;
-
-  const SearchScreen({
-    super.key,
-    required this.onBookInstructor,
-    this.searchQuery = '',
-  });
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  int _selectedRadius = 5;
-  String _selectedTransmission = 'all';
+  double _radius = 5;
+  String _transmisi = 'Semua';
+  final _searchCtrl = TextEditingController();
+  String _query = '';
+
+  List<Instruktur> get _filtered {
+    return mockInstruktur.where((i) {
+      final matchRadius = i.jarak <= _radius;
+      final matchTransmisi = _transmisi == 'Semua' || i.transmisi.contains(_transmisi);
+      final matchQuery = _query.isEmpty || i.nama.toLowerCase().contains(_query.toLowerCase()) || i.wilayah.toLowerCase().contains(_query.toLowerCase());
+      return matchRadius && matchTransmisi && matchQuery;
+    }).toList()
+      ..sort((a, b) => a.jarak.compareTo(b.jarak));
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = mockInstructors.where((inst) {
-      if (inst.distanceKm > _selectedRadius) return false;
-      if (_selectedTransmission != 'all') {
-        if (!inst.transmission.toLowerCase().contains(_selectedTransmission.toLowerCase())) {
-          return false;
-        }
-      }
-      if (widget.searchQuery.isNotEmpty) {
-        final q = widget.searchQuery.toLowerCase();
-        return inst.name.toLowerCase().contains(q) ||
-            inst.locationName.toLowerCase().contains(q) ||
-            inst.carModel.toLowerCase().contains(q);
-      }
-      return true;
-    }).toList();
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
+    return Column(
       children: [
-        // Title & Geolocation status
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        // Search bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: TextField(
+            controller: _searchCtrl,
+            onChanged: (v) => setState(() => _query = v),
+            decoration: const InputDecoration(
+              hintText: 'Cari nama instruktur atau wilayah...',
+              prefixIcon: Icon(Icons.search),
+              suffixIcon: Icon(Icons.tune),
+            ),
+          ),
+        ),
+        const SizedBox(height: 14),
+
+        // Radius filter
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
               children: [
-                const Text(
-                  'Cari Instruktur Terdekat',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    const Icon(Icons.location_on_rounded, size: 12, color: AppColors.primary),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Grendeng, Purwokerto Utara',
-                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                    ),
-                  ],
+                const Icon(Icons.radar, color: AppTheme.primary, size: 18),
+                const SizedBox(width: 10),
+                Text('Radius: ${_radius.toInt()} km', style: const TextStyle(color: AppTheme.textPrimary, fontSize: 13, fontWeight: FontWeight.w600)),
+                Expanded(
+                  child: Slider(
+                    value: _radius,
+                    min: 1,
+                    max: 10,
+                    divisions: 9,
+                    activeColor: AppTheme.primary,
+                    inactiveColor: Colors.white12,
+                    onChanged: (v) => setState(() => _radius = v),
+                  ),
                 ),
               ],
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: AppColors.emerald.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.emerald.withOpacity(0.3)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.gps_fixed_rounded, size: 11, color: AppColors.emerald),
-                  SizedBox(width: 4),
-                  Text('GPS Aktif', style: TextStyle(fontSize: 10, color: AppColors.emerald, fontWeight: FontWeight.bold)),
-                ],
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Simulated Radar Grid Container
-        Container(
-          height: 180,
-          decoration: BoxDecoration(
-            color: const Color(0xFF0C0C0E),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.cardBorder),
           ),
-          child: Stack(
-            alignment: Alignment.center,
+        ),
+        const SizedBox(height: 10),
+
+        // Transmisi filter chips
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: ['Semua', 'Manual', 'Matic'].map((t) {
+                final sel = _transmisi == t;
+                return GestureDetector(
+                  onTap: () => setState(() => _transmisi = t),
+                  child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: sel ? AppTheme.primary.withOpacity(0.2) : Colors.white.withOpacity(0.07),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: sel ? AppTheme.primary : Colors.white.withOpacity(0.1)),
+                    ),
+                    child: Text(t, style: TextStyle(color: sel ? AppTheme.primary : AppTheme.textSecondary, fontSize: 13, fontWeight: sel ? FontWeight.w600 : FontWeight.normal)),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+
+        // Result count
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          child: Row(
             children: [
-              // Concentric radar rings
-              Container(
-                width: 70,
-                height: 70,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary.withOpacity(0.25), width: 1),
-                ),
-              ),
-              Container(
-                width: 140,
-                height: 140,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.primary.withOpacity(0.15), width: 1),
-                ),
-              ),
-              Container(
-                width: 220,
-                height: 220,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.05), width: 1),
-                ),
-              ),
-
-              // Student Center Marker
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primaryGlow.withOpacity(0.8),
-                          blurRadius: 16,
-                        ),
-                      ],
-                      border: Border.all(color: Colors.white, width: 2),
-                    ),
-                    child: const Icon(Icons.person, color: Colors.white, size: 18),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.8),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: const Text('Kamu', style: TextStyle(fontSize: 9, color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-
-              // Surrounding Instructor Pins
-              Positioned(
-                top: 25,
-                left: 45,
-                child: _buildRadarPin('Bambang (1.8km)', true),
-              ),
-              Positioned(
-                top: 40,
-                right: 40,
-                child: _buildRadarPin('Dewi (2.4km)', false),
-              ),
-              Positioned(
-                bottom: 30,
-                left: 60,
-                child: _buildRadarPin('Hendra (3.5km)', false),
-              ),
-              Positioned(
-                bottom: 25,
-                right: 50,
-                child: _buildRadarPin('Ahmad (4.1km)', false),
-              ),
+              Text('${_filtered.length} instruktur ditemukan', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
-
-        // Filter Controls
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Radius Chips
-            Row(
-              children: [3, 5, 10].map((r) {
-                final isSelected = _selectedRadius == r;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedRadius = r),
-                  child: Container(
-                    margin: const EdgeInsets.only(right: 6),
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primary : AppColors.card,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: isSelected ? AppColors.primary : AppColors.cardBorder),
-                    ),
-                    child: Text(
-                      '$r km',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected ? Colors.white : AppColors.textMuted,
-                      ),
-                    ),
+        // List
+        Expanded(
+          child: _filtered.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.search_off, color: AppTheme.textSecondary, size: 48),
+                      SizedBox(height: 10),
+                      Text('Tidak ada instruktur\ndi radius ini', textAlign: TextAlign.center, style: TextStyle(color: AppTheme.textSecondary)),
+                    ],
                   ),
-                );
-              }).toList(),
-            ),
-
-            // Transmission Chips
-            Row(
-              children: ['all', 'Manual', 'Matic'].map((t) {
-                final isSelected = _selectedTransmission == t;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedTransmission = t),
-                  child: Container(
-                    margin: const EdgeInsets.only(left: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: isSelected ? Colors.white.withOpacity(0.12) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: isSelected ? AppColors.primary.withOpacity(0.5) : AppColors.cardBorder),
-                    ),
-                    child: Text(
-                      t == 'all' ? 'Semua' : t,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? AppColors.primaryLight : AppColors.textSubtle,
-                      ),
-                    ),
-                  ),
-                );
-              }).toList(),
-            ),
-          ],
+                )
+              : ListView.builder(
+                  physics: const BouncingScrollPhysics(),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: _filtered.length,
+                  itemBuilder: (_, i) => _instrukturCard(context, _filtered[i]),
+                ),
         ),
-
-        const SizedBox(height: 16),
-
-        // Instructors List
-        ...filtered.map((inst) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: GlassCardDecoration(
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Image.network(
-                          inst.avatar,
-                          width: 54,
-                          height: 54,
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              inst.name,
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                            ),
-                            Row(
-                              children: [
-                                const Icon(Icons.star_rounded, color: AppColors.amber, size: 14),
-                                const SizedBox(width: 2),
-                                Text('${inst.rating}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.amber)),
-                                const SizedBox(width: 6),
-                                Text('• ${inst.distanceKm} km dari posisimu', style: const TextStyle(fontSize: 11, color: AppColors.primaryLight, fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                            Text(
-                              '${inst.carModel} (${inst.carPlate})',
-                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 14),
-                      const SizedBox(width: 6),
-                      Text(
-                        inst.dualPedal,
-                        style: const TextStyle(fontSize: 10, color: AppColors.emerald, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                  const Divider(color: AppColors.cardBorder, height: 18),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Tarif per Jam:', style: TextStyle(fontSize: 10, color: AppColors.textSubtle)),
-                          Text(
-                            'Rp ${inst.hourlyRate.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')}',
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () => widget.onBookInstructor(inst),
-                        icon: const Icon(Icons.calendar_today_rounded, size: 13),
-                        label: const Text('Booking Jadwal', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            )),
       ],
     );
   }
 
-  Widget _buildRadarPin(String text, bool active) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: active ? AppColors.primary : const Color(0xCC18181B),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: active ? Colors.white : Colors.white.withOpacity(0.15)),
-        boxShadow: active
-            ? [
-                BoxShadow(color: AppColors.primaryGlow.withOpacity(0.6), blurRadius: 10),
-              ]
-            : null,
+  Widget _instrukturCard(BuildContext context, Instruktur inst) {
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      onTap: () => showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => BookingSheet(instruktur: inst),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.bold,
-          color: active ? Colors.white : AppColors.textMuted,
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            children: [
+              AvatarInitial(initial: inst.foto, size: 54),
+              if (inst.online)
+                Positioned(
+                  bottom: 2, right: 2,
+                  child: Container(
+                    width: 12, height: 12,
+                    decoration: BoxDecoration(color: AppTheme.success, shape: BoxShape.circle, border: Border.all(color: AppTheme.bgDark, width: 2)),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(inst.nama, style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 15), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    ),
+                    Text('${inst.jarak} km', style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600, fontSize: 13)),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                StarRating(rating: inst.rating, reviews: inst.ulasan),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, color: AppTheme.textSecondary, size: 12),
+                    const SizedBox(width: 3),
+                    Text(inst.wilayah, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                    const Spacer(),
+                    ...inst.transmisi.map((t) => Container(
+                      margin: const EdgeInsets.only(left: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: AppTheme.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+                      child: Text(t, style: const TextStyle(color: AppTheme.primary, fontSize: 10, fontWeight: FontWeight.w600)),
+                    )),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.verified_outlined, color: AppTheme.success, size: 12),
+                    const SizedBox(width: 4),
+                    const Text('Rem Ganda', style: TextStyle(color: AppTheme.success, fontSize: 11, fontWeight: FontWeight.w600)),
+                    const Spacer(),
+                    Text('${inst.pengalaman} thn pengalaman', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

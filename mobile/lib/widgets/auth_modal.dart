@@ -1,258 +1,264 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common.dart';
 
-class AuthModalSheet extends StatefulWidget {
-  const AuthModalSheet({super.key});
+class AuthModal extends StatefulWidget {
+  const AuthModal({super.key});
 
   @override
-  State<AuthModalSheet> createState() => _AuthModalSheetState();
+  State<AuthModal> createState() => _AuthModalState();
 }
 
-class _AuthModalSheetState extends State<AuthModalSheet> {
-  bool _isLogin = true;
+class _AuthModalState extends State<AuthModal> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+  bool _obscurePass = true;
   String _selectedRole = 'siswa';
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
-  final _phoneController = TextEditingController();
-  bool _isLoading = false;
-  String? _errorMsg;
-  String? _successMsg;
+  bool _loading = false;
 
-  Future<void> _handleAuth() async {
-    setState(() {
-      _isLoading = true;
-      _errorMsg = null;
-      _successMsg = null;
-    });
+  final _emailCtrl = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _namaCtrl = TextEditingController();
+  final _teleponCtrl = TextEditingController();
 
-    try {
-      final supabase = Supabase.instance.client;
-      if (_isLogin) {
-        await supabase.auth.signInWithPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
-        setState(() => _successMsg = 'Berhasil masuk!');
-      } else {
-        await supabase.auth.signUp(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-          data: {
-            'full_name': _nameController.text.trim(),
-            'role': _selectedRole,
-            'phone': _phoneController.text.trim(),
-          },
-        );
-        setState(() => _successMsg = 'Akun berhasil terdaftar!');
-      }
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
 
-      await Future.delayed(const Duration(milliseconds: 1000));
-      if (mounted) Navigator.pop(context);
-    } catch (e) {
-      setState(() => _errorMsg = e.toString());
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    _namaCtrl.dispose();
+    _teleponCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() async {
+    setState(() => _loading = true);
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() => _loading = false);
+    if (mounted) {
+      Navigator.of(context).pop({'role': _selectedRole, 'nama': _namaCtrl.text.isNotEmpty ? _namaCtrl.text : 'Demo User'});
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
       decoration: const BoxDecoration(
-        color: Color(0xFF111115),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        border: Border(top: BorderSide(color: AppColors.cardBorder, width: 1.5)),
+        color: Color(0xFF12121A),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(2),
-                ),
+      padding: EdgeInsets.only(
+        left: 24, right: 24, top: 16,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Handle bar
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
               ),
             ),
-            const SizedBox(height: 14),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _isLogin ? 'Masuk ke Akun LPK' : 'Daftar Akun Baru',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.primary.withOpacity(0.3)),
-                  ),
-                  child: const Text('Supabase Auth', style: TextStyle(fontSize: 10, color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
+          ),
+          const SizedBox(height: 20),
 
-            // Tab Toggle
-            Row(
-              children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _isLogin = true),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: _isLogin ? AppColors.primary : Colors.white.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text('Masuk', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: _isLogin ? Colors.white : AppColors.textMuted)),
-                    ),
-                  ),
+          // Logo + Title
+          Row(
+            children: [
+              Container(
+                width: 44, height: 44,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [AppTheme.primary, AppTheme.primaryDark]),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _isLogin = false),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        color: !_isLogin ? AppColors.primary : Colors.white.withOpacity(0.04),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text('Daftar', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: !_isLogin ? Colors.white : AppColors.textMuted)),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-
-            if (_errorMsg != null) ...[
-              const SizedBox(height: 10),
-              Text(_errorMsg!, style: const TextStyle(color: Colors.redAccent, fontSize: 11)),
-            ],
-            if (_successMsg != null) ...[
-              const SizedBox(height: 10),
-              Text(_successMsg!, style: const TextStyle(color: AppColors.emerald, fontSize: 11)),
-            ],
-
-            const SizedBox(height: 14),
-
-            if (!_isLogin) ...[
-              // Role selection
-              const Text('Daftar Sebagai:', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 6),
-              Row(
+                alignment: Alignment.center,
+                child: const Icon(Icons.directions_car, color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedRole = 'siswa'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _selectedRole == 'siswa' ? AppColors.primary.withOpacity(0.2) : Colors.white.withOpacity(0.04),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: _selectedRole == 'siswa' ? AppColors.primary : Colors.transparent),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text('Siswa (Kursus)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedRole = 'mitra'),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _selectedRole == 'mitra' ? AppColors.primary.withOpacity(0.2) : Colors.white.withOpacity(0.04),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: _selectedRole == 'mitra' ? AppColors.primary : Colors.transparent),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Text('Mitra Instruktur', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                      ),
-                    ),
-                  ),
+                  Text('LPK INDOTECH', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+                  const Text('Driving Partner Platform', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
                 ],
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _nameController,
-                decoration: _inputDecoration('Nama Lengkap', Icons.person_rounded),
-                style: const TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: _inputDecoration('Nomor WhatsApp', Icons.phone_rounded),
-                style: const TextStyle(fontSize: 12),
-              ),
-              const SizedBox(height: 10),
             ],
+          ),
+          const SizedBox(height: 24),
 
-            TextField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: _inputDecoration('Alamat Email', Icons.email_rounded),
-              style: const TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: _inputDecoration('Kata Sandi', Icons.lock_rounded),
-              style: const TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: 18),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _handleAuth,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: _isLoading
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : Text(_isLogin ? 'Masuk Sekarang' : 'Daftar Akun', style: const TextStyle(fontWeight: FontWeight.bold)),
+          // Tab bar
+          Container(
+            decoration: AppTheme.glassCard(radius: 12),
+            padding: const EdgeInsets.all(4),
+            child: TabBar(
+              controller: _tabController,
+              indicator: BoxDecoration(
+                color: AppTheme.primary,
+                borderRadius: BorderRadius.circular(10),
               ),
+              indicatorSize: TabBarIndicatorSize.tab,
+              dividerColor: Colors.transparent,
+              labelColor: Colors.white,
+              unselectedLabelColor: AppTheme.textSecondary,
+              labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+              tabs: const [Tab(text: 'Masuk'), Tab(text: 'Daftar')],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+
+          // Tab views
+          SizedBox(
+            height: 320,
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildLoginForm(),
+                _buildRegisterForm(),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: const TextStyle(color: AppColors.textSubtle, fontSize: 12),
-      prefixIcon: Icon(icon, color: AppColors.textSubtle, size: 16),
-      filled: true,
-      fillColor: Colors.white.withOpacity(0.04),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+  Widget _buildLoginForm() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          TextField(
+            controller: _emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _passCtrl,
+            obscureText: _obscurePass,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                onPressed: () => setState(() => _obscurePass = !_obscurePass),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text('Lupa password?', style: const TextStyle(color: AppTheme.primary, fontSize: 13)),
+          ),
+          const SizedBox(height: 20),
+          NeonButton(label: _loading ? 'Memuat...' : 'Masuk', onPressed: _loading ? null : _submit, width: double.infinity, icon: Icons.login),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Belum punya akun?', style: TextStyle(color: AppTheme.textSecondary, fontSize: 13)),
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: () => _tabController.animateTo(1),
+                child: const Text('Daftar sekarang', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600, fontSize: 13)),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRegisterForm() {
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          // Role selector
+          Row(
+            children: [
+              _roleChip('siswa', 'Siswa', Icons.school_outlined),
+              const SizedBox(width: 10),
+              _roleChip('mitra', 'Instruktur Mitra', Icons.drive_eta_outlined),
+            ],
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: _namaCtrl,
+            decoration: const InputDecoration(labelText: 'Nama Lengkap', prefixIcon: Icon(Icons.person_outline)),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _emailCtrl,
+            keyboardType: TextInputType.emailAddress,
+            decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _teleponCtrl,
+            keyboardType: TextInputType.phone,
+            decoration: const InputDecoration(labelText: 'No. WhatsApp', prefixIcon: Icon(Icons.phone_outlined)),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _passCtrl,
+            obscureText: _obscurePass,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(_obscurePass ? Icons.visibility_outlined : Icons.visibility_off_outlined),
+                onPressed: () => setState(() => _obscurePass = !_obscurePass),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          NeonButton(label: _loading ? 'Mendaftar...' : 'Buat Akun', onPressed: _loading ? null : _submit, width: double.infinity, icon: Icons.person_add_outlined),
+        ],
+      ),
+    );
+  }
+
+  Widget _roleChip(String role, String label, IconData icon) {
+    final selected = _selectedRole == role;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedRole = role),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          decoration: BoxDecoration(
+            color: selected ? AppTheme.primary.withOpacity(0.2) : Colors.white.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: selected ? AppTheme.primary : Colors.white.withOpacity(0.1)),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 16, color: selected ? AppTheme.primary : AppTheme.textSecondary),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: selected ? AppTheme.primary : AppTheme.textSecondary,
+                    fontSize: 12,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

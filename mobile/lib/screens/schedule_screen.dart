@@ -1,198 +1,166 @@
 import 'package:flutter/material.dart';
-import '../models/models.dart';
+import '../models/data.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common.dart';
 
 class ScheduleScreen extends StatelessWidget {
-  final VoidCallback onBookMore;
-
-  const ScheduleScreen({super.key, required this.onBookMore});
+  const ScheduleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final inst = mockInstructors[0];
-
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 120),
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Column(
+    return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Active session card
+          GlassCard(
+            highlight: true,
+            padding: const EdgeInsets.all(18),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Jadwal Pelatihan',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                Row(
+                  children: [
+                    const Icon(Icons.play_circle_filled, color: AppTheme.primary, size: 20),
+                    const SizedBox(width: 8),
+                    const Text('Sesi Mendatang', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold)),
+                    const Spacer(),
+                    StatusBadge.fromStatus('dikonfirmasi'),
+                  ],
                 ),
-                Text(
-                  'Door-to-door dengan buffer perjalanan 30 menit',
-                  style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                const SizedBox(height: 14),
+                const Text('Paket Standar · Sesi ke-3', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+                const SizedBox(height: 4),
+                const Text('Pak Hendra Wijaya', style: TextStyle(color: AppTheme.textPrimary, fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    _infoChip(Icons.calendar_today, 'Besok'),
+                    const SizedBox(width: 8),
+                    _infoChip(Icons.access_time, '09:00 WIB'),
+                    const SizedBox(width: 8),
+                    _infoChip(Icons.timer, '2 jam'),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.location_on, size: 16),
+                        label: const Text('Lacak Lokasi'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppTheme.primary,
+                          side: const BorderSide(color: AppTheme.primary),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () {},
+                        icon: const Icon(Icons.message, size: 16),
+                        label: const Text('WhatsApp'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF25D366),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            IconButton(
-              onPressed: onBookMore,
-              icon: const Icon(Icons.add_circle_rounded, color: AppColors.primary, size: 28),
+          ),
+          const SizedBox(height: 20),
+
+          // Progress bar
+          const SectionHeader(title: '📊 Progress Latihan'),
+          GlassCard(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Paket Standar', style: TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+                    const Text('3/10 sesi', style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: 0.3,
+                    backgroundColor: Colors.white12,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                    minHeight: 8,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text('30% selesai · 7 sesi tersisa', style: TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+              ],
             ),
-          ],
-        ),
-
-        const SizedBox(height: 16),
-
-        // Upcoming Session Card
-        Container(
-          padding: const EdgeInsets.all(18),
-          decoration: GlassCardDecoration(
-            color: const Color(0xCC1F161A),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: AppColors.primary.withOpacity(0.5)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Row(
-                    children: [
-                      Icon(Icons.directions_car_filled_rounded, color: AppColors.primary, size: 16),
-                      SizedBox(width: 6),
-                      Text(
-                        'SESI TERDEKAT BERIKUTNYA',
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: AppColors.primaryLight, letterSpacing: 0.8),
-                      ),
-                    ],
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: AppColors.emerald.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text('Terkonfirmasi', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: AppColors.emerald)),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              const Text(
-                'Besok, 08:00 - 10:00 WIB',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900),
-              ),
-              const Text(
-                'Modul 3: Stop & Go Tanjakan Baturraden',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primaryLight),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  const Icon(Icons.location_on_rounded, size: 13, color: AppColors.primary),
-                  const SizedBox(width: 4),
-                  const Expanded(
-                    child: Text(
-                      'Kost Putri Melati, Jl. Kampus Grendeng No. 12, Purwokerto Utara',
-                      style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-                    ),
-                  ),
-                ],
-              ),
-              const Divider(color: AppColors.cardBorder, height: 20),
-              Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: Image.network(inst.avatar, width: 36, height: 36, fit: BoxFit.cover),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(inst.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                        Text('${inst.carModel} • ${inst.carPlate}', style: const TextStyle(fontSize: 10, color: AppColors.textSubtle)),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Menghubungi instruktur via WhatsApp LPK Indotech...')),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
-                    child: const Text('Chat WA', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+          const SizedBox(height: 20),
 
-        const SizedBox(height: 20),
-
-        const Text(
-          'Riwayat & Rencana Sesi',
-          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-
-        _buildTimelineItem(
-          title: 'Modul 4: Master Parkir Seri & Paralel',
-          date: 'Sabtu, 21 Nov 2026 (10:30 WIB)',
-          instructor: 'Bambang Sugiantoro (Avanza)',
-          isCompleted: false,
-        ),
-        _buildTimelineItem(
-          title: 'Modul 2: Manuver Belok & Haluan Jalan Sempit',
-          date: '14 Nov 2026 (08:00 WIB)',
-          instructor: 'Bambang Sugiantoro • Skor 90/100',
-          isCompleted: true,
-        ),
-        _buildTimelineItem(
-          title: 'Modul 1: Kokpit & Kontrol Pedal',
-          date: '12 Nov 2026 (08:00 WIB)',
-          instructor: 'Bambang Sugiantoro • Skor 95/100',
-          isCompleted: true,
-        ),
-      ],
+          // Riwayat
+          const SectionHeader(title: '🕐 Riwayat Sesi'),
+          ...mockBooking.map((b) => _bookingCard(b)),
+          const SizedBox(height: 100),
+        ],
+      ),
     );
   }
 
-  Widget _buildTimelineItem({
-    required String title,
-    required String date,
-    required String instructor,
-    required bool isCompleted,
-  }) {
+  Widget _infoChip(IconData icon, String label) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: GlassCardDecoration(
-        color: isCompleted ? Colors.white.withOpacity(0.02) : null,
-        borderRadius: BorderRadius.circular(18),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(color: Colors.white.withOpacity(0.07), borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppTheme.textSecondary, size: 12),
+          const SizedBox(width: 4),
+          Text(label, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 11)),
+        ],
       ),
+    );
+  }
+
+  Widget _bookingCard(Booking b) {
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
-          Icon(
-            isCompleted ? Icons.check_circle_rounded : Icons.schedule_rounded,
-            color: isCompleted ? AppColors.emerald : AppColors.primaryLight,
-            size: 20,
+          Container(
+            width: 48, height: 48,
+            decoration: BoxDecoration(
+              color: b.status == 'selesai' ? AppTheme.success.withOpacity(0.1) : AppTheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            alignment: Alignment.center,
+            child: Icon(b.status == 'selesai' ? Icons.check_circle : Icons.schedule, color: b.status == 'selesai' ? AppTheme.success : AppTheme.primary, size: 22),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                Text(date, style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                Text(instructor, style: const TextStyle(fontSize: 10, color: AppColors.textSubtle)),
+                Text('Sesi ke-${b.sesiKe} · ${b.paketNama}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppTheme.textPrimary, fontSize: 13)),
+                const SizedBox(height: 2),
+                Text('${b.tanggal.day}/${b.tanggal.month}/${b.tanggal.year} · ${b.jam}', style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
               ],
             ),
           ),
+          StatusBadge.fromStatus(b.status),
         ],
       ),
     );
