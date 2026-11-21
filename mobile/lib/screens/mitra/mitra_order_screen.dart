@@ -239,11 +239,13 @@ class MitraOrderScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const StatusPill(label: 'ORDER BARU MASUK', color: AppColors.primary, icon: Icons.bolt_rounded),
-              const Spacer(),
+              const Flexible(
+                child: StatusPill(label: 'ORDER BARU', color: AppColors.primary, icon: Icons.bolt_rounded),
+              ),
+              const SizedBox(width: 8),
               Text(
                 '+${formatRupiah(order.mitraEarning)}',
-                style: const TextStyle(color: AppColors.emerald, fontWeight: FontWeight.w900, fontSize: 16),
+                style: const TextStyle(color: AppColors.emerald, fontWeight: FontWeight.w900, fontSize: 15),
               ),
             ],
           ),

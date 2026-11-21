@@ -302,8 +302,11 @@ class ServiceAreaConfig {
 class AppState extends ChangeNotifier {
   UserRole currentRole = UserRole.siswa;
   bool isLoggedIn = false;
+  bool isSuperAdmin = false;
+  bool isMaster = false;
+  String currentUsername = '';
   String userName = 'Dimas Aditya';
-  String userEmail = 'dimas@siswa.lpk.id';
+  String userEmail = 'siswa@lpk-cij.id';
   String studentLocation = 'Purwokerto Utara';
 
   // Smart Revenue Split (configurable by Admin LPK)
@@ -659,8 +662,18 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void login({required String name, required String email, required UserRole role}) {
+  void login({
+    required String name,
+    required String email,
+    required UserRole role,
+    String username = '',
+    bool superAdmin = false,
+    bool master = false,
+  }) {
     isLoggedIn = true;
+    isSuperAdmin = superAdmin || master;
+    isMaster = master;
+    currentUsername = username.isNotEmpty ? username : email.split('@').first;
     userName = name;
     userEmail = email;
     currentRole = role;
@@ -669,7 +682,11 @@ class AppState extends ChangeNotifier {
 
   void logout() {
     isLoggedIn = false;
+    isSuperAdmin = false;
+    isMaster = false;
+    currentUsername = '';
     userName = 'Dimas Aditya';
+    currentRole = UserRole.siswa;
     notifyListeners();
   }
 

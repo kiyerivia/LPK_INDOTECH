@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/biometric_card.dart';
 import '../../widgets/common.dart';
 
 class SiswaProfileScreen extends StatelessWidget {
@@ -55,38 +56,7 @@ class SiswaProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-
-          GlassCard(
-            highlight: true,
-            highlightColor: AppColors.emerald,
-            padding: const EdgeInsets.all(16),
-            onTap: () => appState.setRole(UserRole.mitra),
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.emerald.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Icon(Icons.local_taxi_rounded, color: AppColors.emerald),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Punya Mobil & Pengalaman Driver Online?', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 13)),
-                      SizedBox(height: 2),
-                      Text('Gabung jadi Mitra Instruktur LPK — Bagi hasil 60% otomatis!', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_forward_ios_rounded, color: AppColors.emerald, size: 16),
-              ],
-            ),
-          ),
+          BiometricSecurityCard(appState: appState),
           const SizedBox(height: 14),
 
           GlassCard(

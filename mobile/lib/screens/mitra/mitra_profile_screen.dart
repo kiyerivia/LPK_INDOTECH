@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/biometric_card.dart';
 import '../../widgets/common.dart';
 
 class MitraProfileScreen extends StatefulWidget {
@@ -26,6 +27,9 @@ class _MitraProfileScreenState extends State<MitraProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          BiometricSecurityCard(appState: app),
+          const SizedBox(height: 14),
+
           GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(

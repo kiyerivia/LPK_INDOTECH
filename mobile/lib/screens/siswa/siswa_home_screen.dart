@@ -58,31 +58,37 @@ class SiswaHomeScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    GestureDetector(
-                      onTap: () => _pickArea(context),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.my_location_rounded, color: Colors.white, size: 13),
-                            const SizedBox(width: 5),
-                            Text(
-                              appState.studentLocation,
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
-                            ),
-                            const SizedBox(width: 3),
-                            const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 14),
-                          ],
+                    Flexible(
+                      child: GestureDetector(
+                        onTap: () => _pickArea(context),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.my_location_rounded, color: Colors.white, size: 13),
+                              const SizedBox(width: 5),
+                              Flexible(
+                                child: Text(
+                                  appState.studentLocation,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                              const SizedBox(width: 3),
+                              const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 14),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                    const Spacer(),
+                    const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
@@ -298,16 +304,17 @@ class SiswaHomeScreen extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Row(
+                                Wrap(
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  spacing: 8,
+                                  runSpacing: 4,
                                   children: [
                                     Text(
                                       pkg.name,
                                       style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary, fontSize: 15),
                                     ),
-                                    if (pkg.isPopular) ...[
-                                      const SizedBox(width: 8),
+                                    if (pkg.isPopular)
                                       const StatusPill(label: 'Best Seller', color: AppColors.amber),
-                                    ],
                                   ],
                                 ),
                                 const SizedBox(height: 3),

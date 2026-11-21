@@ -4,8 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/app_models.dart';
 import 'theme/app_theme.dart';
 import 'widgets/neon_navbar.dart';
-import 'widgets/auth_modal.dart';
 import 'widgets/booking_sheet.dart';
+import 'screens/auth/auth_dashboard_screen.dart';
 import 'screens/siswa/siswa_home_screen.dart';
 import 'screens/siswa/siswa_search_screen.dart';
 import 'screens/siswa/siswa_schedule_screen.dart';
@@ -84,13 +84,21 @@ class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
     if (mounted) setState(() {});
   }
 
-  void _openAuth() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => AuthModal(appState: _appState),
-    );
+  void _logoutToAuth() {
+    _appState.logout();
+    setState(() {
+      _siswaTab = 0;
+      _mitraTab = 0;
+      _adminTab = 0;
+    });
+  }
+
+  void _onAuthenticated() {
+    setState(() {
+      _siswaTab = 0;
+      _mitraTab = 0;
+      _adminTab = 0;
+    });
   }
 
   Future<void> _openBooking(Instructor instructor, [DrivingPackage? pkg]) async {
@@ -198,7 +206,7 @@ class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
           case 3:
             return SiswaReportScreen(appState: _appState);
           default:
-            return SiswaProfileScreen(appState: _appState, onOpenAuth: _openAuth);
+            return SiswaProfileScreen(appState: _appState, onOpenAuth: _logoutToAuth);
         }
 
       case UserRole.mitra:
@@ -232,6 +240,13 @@ class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_appState.isLoggedIn) {
+      return AuthDashboardScreen(
+        appState: _appState,
+        onAuthenticated: _onAuthenticated,
+      );
+    }
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -306,7 +321,7 @@ class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
               child: Column(
                 children: [
                   _buildGlassyHeader(),
-                  _buildRoleSwitcherBar(),
+                  if (_appState.isSuperAdmin) _buildRoleSwitcherBar(),
                   Expanded(
                     child: AnimatedSwitcher(
                       duration: const Duration(milliseconds: 220),
@@ -344,24 +359,26 @@ class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 42,
+            height: 42,
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_roleAccent, Color.lerp(_roleAccent, Colors.cyanAccent, 0.25)!],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(13),
+              border: Border.all(color: _roleAccent.withValues(alpha: 0.3), width: 1.2),
               boxShadow: [
                 BoxShadow(
-                  color: _roleAccent.withValues(alpha: 0.28),
-                  blurRadius: 12,
+                  color: _roleAccent.withValues(alpha: 0.18),
+                  blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: const Icon(Icons.directions_car_rounded, color: Colors.white, size: 21),
+            child: Image.asset(
+              'assets/logo.png',
+              fit: BoxFit.contain,
+              errorBuilder: (_, _, _) => Icon(Icons.directions_car_rounded, color: _roleAccent, size: 21),
+            ),
           ),
           const SizedBox(width: 11),
           Expanded(
@@ -385,11 +402,11 @@ class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
             ),
           ),
           GestureDetector(
-            onTap: _openAuth,
+            onTap: _logoutToAuth,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.85),
+                color: Colors.white.withValues(alpha: 0.88),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.white, width: 1.2),
                 boxShadow: [
@@ -404,15 +421,29 @@ class _DrivingPartnerShellState extends State<DrivingPartnerShell> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    _appState.isLoggedIn ? Icons.verified_user_rounded : Icons.account_circle_rounded,
-                    size: 16,
-                    color: _appState.isLoggedIn ? AppColors.emerald : _roleAccent,
+                    _appState.isMaster
+                        ? Icons.workspace_premium_rounded
+                        : _appState.isSuperAdmin
+                            ? Icons.admin_panel_settings_rounded
+                            : Icons.verified_user_rounded,
+                    size: 15,
+                    color: _appState.isMaster ? AppColors.amber : _roleAccent,
                   ),
                   const SizedBox(width: 5),
                   Text(
-                    _appState.isLoggedIn ? _appState.userName.split(' ').first : 'Masuk',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
+                    _appState.isMaster
+                        ? 'MASTER INDOTECH'
+                        : _appState.isSuperAdmin
+                            ? 'Super Admin / LPK'
+                            : _appState.userName.split(' ').first,
+                    style: TextStyle(
+                      color: _appState.isMaster ? AppColors.amber : AppColors.textPrimary,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.logout_rounded, size: 14, color: AppColors.danger),
                 ],
               ),
             ),

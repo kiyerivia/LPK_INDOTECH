@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
@@ -13,8 +14,10 @@ class NavTabItem {
   });
 }
 
-/// Floating Frosted Pearl Glass Navbar with Futuristic Neon Arch (Video V5)
-class NeonArchNavbar extends StatelessWidget {
+/// Liquid Curved-Notch Floating Navbar (Inspired directly by Menu_Animation.mp4)
+/// Features a sleek rounded bar with an animated concave U-shaped cutout and a
+/// floating circular bubble that glides fluidly to cradle the active tab icon.
+class NeonArchNavbar extends StatefulWidget {
   final List<NavTabItem> tabs;
   final int currentIndex;
   final ValueChanged<int> onTabSelected;
@@ -29,194 +32,356 @@ class NeonArchNavbar extends StatelessWidget {
   });
 
   @override
+  State<NeonArchNavbar> createState() => _NeonArchNavbarState();
+}
+
+class _NeonArchNavbarState extends State<NeonArchNavbar>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _positionAnim;
+  double _currentPos = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPos = widget.currentIndex.toDouble();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 420),
+    );
+    _positionAnim = AlwaysStoppedAnimation(_currentPos);
+  }
+
+  @override
+  void didUpdateWidget(covariant NeonArchNavbar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final maxIdx = math.max(0, widget.tabs.length - 1);
+    final target = widget.currentIndex.clamp(0, maxIdx).toDouble();
+
+    if (oldWidget.tabs.length != widget.tabs.length) {
+      // Role switched (tab count changed) — snap cleanly to new tab
+      _controller.stop();
+      _currentPos = target;
+      _positionAnim = AlwaysStoppedAnimation(_currentPos);
+    } else if (oldWidget.currentIndex != widget.currentIndex) {
+      final begin = _positionAnim.value.clamp(0.0, maxIdx.toDouble());
+      _positionAnim = Tween<double>(begin: begin, end: target).animate(
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+      );
+      _controller.forward(from: 0);
+      _currentPos = target;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Color get _activeIconGlow {
+    if (widget.accentColor == AppColors.emerald) {
+      return const Color(0xFF2DD4BF); // Luminous Mint-Teal (Mitra)
+    } else if (widget.accentColor == AppColors.purple) {
+      return const Color(0xFFC084FC); // Luminous Lavender (Admin)
+    }
+    return const Color(0xFFFFB800); // Signature Luminous Gold from Menu_Animation.mp4 (Siswa)
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final safeIndex = currentIndex.clamp(0, tabs.length - 1);
+    final tabCount = widget.tabs.length;
+    final safeIndex = widget.currentIndex.clamp(0, tabCount - 1);
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
-      height: 68,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.90),
-        borderRadius: BorderRadius.circular(36),
-        border: Border.all(color: Colors.white, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E3A8A).withValues(alpha: 0.12),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
-          ),
-          BoxShadow(
-            color: accentColor.withValues(alpha: 0.15),
-            blurRadius: 20,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final tabWidth = constraints.maxWidth / tabs.length;
-          final indicatorLeft = safeIndex * tabWidth;
+    const double totalHeight = 84;
+    const double barTop = 20;
+    const double barHeight = 64;
+    const double circleSize = 46;
+    const double sidePad = 8;
 
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              // Subtle Bottom Futuristic Accent Line
-              Positioned(
-                bottom: 0,
-                left: 36,
-                right: 36,
-                height: 2.5,
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(2),
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        accentColor.withValues(alpha: 0.65),
-                        Colors.transparent,
-                      ],
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      child: SizedBox(
+        height: totalHeight,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final totalWidth = constraints.maxWidth;
+            final innerWidth = totalWidth - (sidePad * 2);
+            final tabWidth = innerWidth / tabCount;
+
+            return AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                final animatedIndex = _positionAnim.value.clamp(0.0, (tabCount - 1).toDouble());
+                final notchCenterX = sidePad + (animatedIndex + 0.5) * tabWidth;
+
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    // 1. Sleek Rounded Bar with Dynamic Concave U-Notch Cutout
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _CurvedNotchBarPainter(
+                          notchCenterX: notchCenterX,
+                          barTop: barTop,
+                          barHeight: barHeight,
+                          tabWidth: tabWidth,
+                          accentColor: widget.accentColor,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              ),
 
-              // Animated Neon Arch Bell-Curve Rising Over Active Tab
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 320),
-                curve: Curves.easeOutBack,
-                left: indicatorLeft,
-                top: -14,
-                width: tabWidth,
-                height: 52,
-                child: CustomPaint(
-                  painter: _NeonArchPainter(color: accentColor),
-                ),
-              ),
-
-              // Tabs Row
-              Row(
-                children: List.generate(tabs.length, (index) {
-                  final isSelected = safeIndex == index;
-                  final tab = tabs[index];
-
-                  return Expanded(
-                    child: GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () => onTabSelected(index),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 240),
-                        alignment: Alignment.center,
-                        transform: Matrix4.translationValues(0, isSelected ? -3 : 0, 0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                Icon(
-                                  tab.icon,
-                                  size: 21,
-                                  color: isSelected ? accentColor : AppColors.textMuted,
-                                ),
-                                if ((tab.badgeCount ?? 0) > 0)
-                                  Positioned(
-                                    right: -7,
-                                    top: -5,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.emerald,
-                                        borderRadius: BorderRadius.circular(10),
-                                        border: Border.all(color: Colors.white, width: 1.5),
-                                      ),
-                                      child: Text(
-                                        '${tab.badgeCount}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                    // 2. Gliding Floating Circular Bubble Nestled in the Concave Notch
+                    Positioned(
+                      left: notchCenterX - (circleSize / 2),
+                      top: barTop - 16,
+                      width: circleSize,
+                      height: circleSize,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFF1E293B), // Futuristic Slate
+                              Color(0xFF0B1120), // Deep Obsidian Navy
+                            ],
+                          ),
+                          border: Border.all(
+                            color: _activeIconGlow.withValues(alpha: 0.45),
+                            width: 1.4,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF0F172A).withValues(alpha: 0.32),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
                             ),
-                            const SizedBox(height: 3),
-                            Text(
-                              tab.label,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                color: isSelected ? accentColor : AppColors.textMuted,
-                              ),
+                            BoxShadow(
+                              color: _activeIconGlow.withValues(alpha: 0.25),
+                              blurRadius: 14,
+                              spreadRadius: -2,
                             ),
                           ],
                         ),
                       ),
                     ),
-                  );
-                }),
-              ),
-            ],
-          );
-        },
+
+                    // 3. Interactive Tab Icons & Labels
+                    Positioned(
+                      left: sidePad,
+                      right: sidePad,
+                      top: 0,
+                      bottom: 0,
+                      child: Row(
+                        children: List.generate(tabCount, (index) {
+                          final isSelected = safeIndex == index;
+                          final tab = widget.tabs[index];
+
+                          return Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () => widget.onTabSelected(index),
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  // Animated Icon — rises smoothly into the floating circle when active
+                                  AnimatedPositioned(
+                                    duration: const Duration(milliseconds: 340),
+                                    curve: Curves.easeOutBack,
+                                    top: isSelected ? (barTop - 16 + (circleSize - 23) / 2) : (barTop + 14),
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        AnimatedScale(
+                                          scale: isSelected ? 1.08 : 0.96,
+                                          duration: const Duration(milliseconds: 280),
+                                          curve: Curves.easeOutBack,
+                                          child: Icon(
+                                            tab.icon,
+                                            size: 23,
+                                            color: isSelected
+                                                ? _activeIconGlow
+                                                : Colors.white.withValues(alpha: 0.85),
+                                            shadows: isSelected
+                                                ? [
+                                                    Shadow(
+                                                      color: _activeIconGlow.withValues(alpha: 0.65),
+                                                      blurRadius: 10,
+                                                    ),
+                                                  ]
+                                                : null,
+                                          ),
+                                        ),
+                                        if ((tab.badgeCount ?? 0) > 0)
+                                          Positioned(
+                                            right: -8,
+                                            top: -6,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.emerald,
+                                                borderRadius: BorderRadius.circular(10),
+                                                border: Border.all(color: const Color(0xFF0F172A), width: 1.5),
+                                              ),
+                                              child: Text(
+                                                '${tab.badgeCount}',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w800,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+
+                                  // Crisp Label tucked cleanly along the bottom of the bar
+                                  Positioned(
+                                    bottom: 7,
+                                    left: 2,
+                                    right: 2,
+                                    child: AnimatedDefaultTextStyle(
+                                      duration: const Duration(milliseconds: 240),
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                                        color: isSelected
+                                            ? _activeIconGlow
+                                            : Colors.white.withValues(alpha: 0.62),
+                                      ),
+                                      child: Text(
+                                        tab.label,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-class _NeonArchPainter extends CustomPainter {
-  final Color color;
-  _NeonArchPainter({required this.color});
+class _CurvedNotchBarPainter extends CustomPainter {
+  final double notchCenterX;
+  final double barTop;
+  final double barHeight;
+  final double tabWidth;
+  final Color accentColor;
+
+  _CurvedNotchBarPainter({
+    required this.notchCenterX,
+    required this.barTop,
+    required this.barHeight,
+    required this.tabWidth,
+    required this.accentColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final centerX = size.width / 2;
-    const archWidth = 44.0;
-    final leftX = centerX - (archWidth / 2);
-    final rightX = centerX + (archWidth / 2);
+    final w = size.width;
+    final top = barTop;
+    final bottom = barTop + barHeight;
+    const double cornerR = 20.0;
+
+    // Smooth organic U-notch parameters matching Menu_Animation.mp4
+    final double notchHalfW = math.min(40.0, tabWidth * 0.60);
+    final double notchBottom = top + 36.5;
+
+    final double leftShoulder = (notchCenterX - notchHalfW).clamp(cornerR, w - cornerR - 40);
+    final double rightShoulder = (notchCenterX + notchHalfW).clamp(cornerR + 40, w - cornerR);
+    final double leftSpan = notchCenterX - leftShoulder;
+    final double rightSpan = rightShoulder - notchCenterX;
 
     final path = Path()
-      ..moveTo(leftX - 8, size.height)
-      ..cubicTo(leftX + 2, size.height, leftX + 4, 8, centerX, 8)
-      ..cubicTo(rightX - 4, 8, rightX - 2, size.height, rightX + 8, size.height);
+      ..moveTo(cornerR, top)
+      ..lineTo(leftShoulder, top)
+      // Smooth S-curve down into circular cradle
+      ..cubicTo(
+        leftShoulder + leftSpan * 0.42,
+        top,
+        notchCenterX - 27,
+        notchBottom,
+        notchCenterX,
+        notchBottom,
+      )
+      // Smooth S-curve back up to top edge
+      ..cubicTo(
+        notchCenterX + 27,
+        notchBottom,
+        rightShoulder - rightSpan * 0.42,
+        top,
+        rightShoulder,
+        top,
+      )
+      ..lineTo(w - cornerR, top)
+      ..quadraticBezierTo(w, top, w, top + cornerR)
+      ..lineTo(w, bottom - cornerR)
+      ..quadraticBezierTo(w, bottom, w - cornerR, bottom)
+      ..lineTo(cornerR, bottom)
+      ..quadraticBezierTo(0, bottom, 0, bottom - cornerR)
+      ..lineTo(0, top + cornerR)
+      ..quadraticBezierTo(0, top, cornerR, top)
+      ..close();
 
-    // 1. Soft Ambient Glow Under Arch
-    final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [color.withValues(alpha: 0.24), Colors.transparent],
-        radius: 0.85,
-      ).createShader(Rect.fromCircle(center: Offset(centerX, 20), radius: 24));
-    canvas.drawCircle(Offset(centerX, 20), 20, glowPaint);
+    // Soft Floating Shadow underneath the notched bar
+    canvas.drawShadow(
+      path.shift(const Offset(0, 6)),
+      const Color(0xFF0F172A).withValues(alpha: 0.35),
+      18,
+      true,
+    );
 
-    // 2. Soft Luminous Outer Halo
-    final blurPaint = Paint()
-      ..color = color.withValues(alpha: 0.45)
-      ..strokeWidth = 5.5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawPath(path, blurPaint);
+    // Sleek Deep Midnight Futuristic Gradient Fill
+    final fillPaint = Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xFF131C31),
+          Color(0xFF0B1120),
+        ],
+      ).createShader(Rect.fromLTWH(0, top, w, barHeight))
+      ..style = PaintingStyle.fill;
 
-    // 3. Crisp Futuristic Gradient Stroke
-    final crispPaint = Paint()
+    canvas.drawPath(path, fillPaint);
+
+    // Subtle Crisp Glass Rim Highlight along the notched silhouette
+    final borderPaint = Paint()
       ..shader = LinearGradient(
-        colors: [color, Color.lerp(color, Colors.cyanAccent, 0.35)!, color],
-      ).createShader(Rect.fromLTWH(leftX - 8, 8, archWidth + 16, size.height))
-      ..strokeWidth = 2.6
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Colors.white.withValues(alpha: 0.22),
+          accentColor.withValues(alpha: 0.12),
+        ],
+      ).createShader(Rect.fromLTWH(0, top, w, barHeight))
       ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawPath(path, crispPaint);
+      ..strokeWidth = 1.1;
 
-    // 4. Center Jewel Dot
-    final dotRing = Paint()..color = color;
-    final dotCore = Paint()..color = Colors.white;
-    canvas.drawCircle(Offset(centerX, 8), 3.4, dotRing);
-    canvas.drawCircle(Offset(centerX, 8), 1.6, dotCore);
+    canvas.drawPath(path, borderPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _NeonArchPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _CurvedNotchBarPainter oldDelegate) =>
+      oldDelegate.notchCenterX != notchCenterX ||
+      oldDelegate.tabWidth != tabWidth ||
+      oldDelegate.accentColor != accentColor;
 }

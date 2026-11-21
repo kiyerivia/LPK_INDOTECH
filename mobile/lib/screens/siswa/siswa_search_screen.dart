@@ -91,9 +91,15 @@ class _SiswaSearchScreenState extends State<SiswaSearchScreen> {
                 Row(
                   children: [
                     const Icon(Icons.radar_rounded, color: AppColors.primary, size: 16),
-                    const SizedBox(width: 8),
-                    const Text('Radius Pencarian:', style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
-                    const Spacer(),
+                    const SizedBox(width: 6),
+                    const Expanded(
+                      child: Text(
+                        'Radius:',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
                     ...[3.0, 5.0, 10.0].map((r) {
                       final sel = _radiusKm == r;
                       return GestureDetector(
@@ -157,13 +163,17 @@ class _SiswaSearchScreenState extends State<SiswaSearchScreen> {
           const SizedBox(height: 12),
           Row(
             children: [
-              Text(
-                'Menampilkan ${results.length} Mitra Terdekat',
-                style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 13),
+              Expanded(
+                child: Text(
+                  'Menampilkan ${results.length} Mitra Terdekat',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 13),
+                ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               const Text(
-                'Urut: Jarak terdekat',
+                'Urut: Terdekat',
                 style: TextStyle(color: AppColors.textMuted, fontSize: 11),
               ),
             ],
@@ -236,21 +246,31 @@ class _SiswaSearchScreenState extends State<SiswaSearchScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: 8,
+                      runSpacing: 6,
                       children: [
-                        const Icon(Icons.star_rounded, color: AppColors.amber, size: 14),
-                        const SizedBox(width: 3),
-                        Text(
-                          '${inst.rating} (${inst.reviews} ulasan)',
-                          style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.star_rounded, color: AppColors.amber, size: 14),
+                            const SizedBox(width: 3),
+                            Text(
+                              '${inst.rating} (${inst.reviews})',
+                              style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w700),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        const Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 13),
-                        const SizedBox(width: 3),
-                        const Text('Rem Ganda', style: TextStyle(color: AppColors.emerald, fontSize: 11, fontWeight: FontWeight.w700)),
-                        const Spacer(),
+                        const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 13),
+                            SizedBox(width: 3),
+                            Text('Rem Ganda', style: TextStyle(color: AppColors.emerald, fontSize: 11, fontWeight: FontWeight.w700)),
+                          ],
+                        ),
                         ...inst.transmissions.map((t) => Container(
-                              margin: const EdgeInsets.only(left: 4),
                               padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                               decoration: BoxDecoration(
                                 color: AppColors.backgroundAlt,
