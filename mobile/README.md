@@ -26,3 +26,8 @@ flutter run -d chrome -t lib/main_mitra.dart
 # Standalone Command Center (Master & LPK)
 flutter run -d chrome -t lib/main_console.dart
 ```
+
+## Auto-Deploy Vercel
+
+Semua project di atas tersambung ke branch `main` dengan `Root Directory: mobile` dan script build `vercel_build.sh`.
+
