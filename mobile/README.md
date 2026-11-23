@@ -1,17 +1,28 @@
-# lpk_indotech
+# LPK Citra Indotech Jaya (CIJ) — Multi-App Driving Ecosystem
 
-A new Flutter project.
+Platform kursus mengemudi & pendampingan SIM A dengan arsitektur **3 aplikasi terpisah ala Gojek + 1 Portal Ekosistem** dari satu codebase Flutter (`mobile/`) dan satu database Supabase.
 
-## Getting Started
+## Aplikasi & Target Build (`APP_TARGET`)
 
-This project is a starting point for a Flutter application.
+| Aplikasi | Vercel URL | Entrypoint (`APP_TARGET`) | Role |
+| :--- | :--- | :--- | :--- |
+| **CIJ Driving** | https://cij-driving.vercel.app | `lib/main_user.dart` | Konsumen / Siswa |
+| **CIJ Partner** | https://cij-partner.vercel.app | `lib/main_mitra.dart` | Mitra Driver / Instruktur |
+| **CIJ Command Center** | https://cij-console.vercel.app | `lib/main_console.dart` | INDOTECH (Master) & LPK (Super Admin) |
+| **Portal Ekosistem** | https://lpk-indotech.vercel.app | `lib/main.dart` | Launcher Demo 3 Aplikasi |
 
-A few resources to get you started if this is your first Flutter project:
+## Menjalankan Lokal
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+# Portal Launcher (semua aplikasi)
+flutter run -d chrome
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Standalone Konsumen / Siswa
+flutter run -d chrome -t lib/main_user.dart
+
+# Standalone Mitra Driver
+flutter run -d chrome -t lib/main_mitra.dart
+
+# Standalone Command Center (Master & LPK)
+flutter run -d chrome -t lib/main_console.dart
+```
