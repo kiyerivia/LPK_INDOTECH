@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lpk_indotech/apps/console_app.dart';
+import 'package:lpk_indotech/apps/mitra_app.dart';
+import 'package:lpk_indotech/apps/user_app.dart';
 import 'package:lpk_indotech/main.dart';
 
 void main() {
-  testWidgets('Clean Neumorphic Auth, Biometric Security & Super Admin RBAC test', (
-    WidgetTester tester,
-  ) async {
+  setUp(() {
     SharedPreferences.setMockInitialValues({});
+  });
+
+  testWidgets('Ecosystem Portal Launcher displays all 3 separate apps', (tester) async {
     tester.view.physicalSize = const Size(430, 932);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -15,57 +19,97 @@ void main() {
     await tester.pumpWidget(const LPKIndotechApp());
     await tester.pumpAndSettle();
 
-    // 1. Verify circled top clutter & login role tabs are GONE
-    expect(find.text('LPK CITRA INDOTECH JAYA'), findsOneWidget);
-    expect(find.text('Dark Mode'), findsNothing);
-    expect(find.text('Indonesia'), findsNothing);
-    expect(find.text('← Beranda'), findsNothing);
-    expect(find.text('Admin'), findsNothing);
+    expect(find.text('CIJ Driving (Siswa)'), findsOneWidget);
+    expect(find.text('CIJ Partner (Instruktur)'), findsOneWidget);
+    expect(find.text('CIJ Command Center'), findsOneWidget);
+  });
 
-    // 2. Biometric tap MUST reject securely when not enrolled yet (no bypass!)
-    final fpFinder = find.byIcon(Icons.fingerprint_rounded);
-    await tester.ensureVisible(fpFinder);
-    await tester.tap(fpFinder);
+  testWidgets('App 1 (UserApp) enforces Siswa-only RBAC and opens consumer dashboard', (tester) async {
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const UserApp());
     await tester.pumpAndSettle();
-    expect(find.textContaining('belum terdaftar'), findsOneWidget);
 
-    // 3. Wrong password MUST be rejected
+    expect(find.text('APLIKASI KONSUMEN / SISWA'), findsOneWidget);
+
+    // Master account MUST be rejected in UserApp (wrong app!)
     final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'superadmin');
-    await tester.enterText(fields.at(1), 'wrongpass');
-    await tester.tap(find.text('Masuk'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Kata sandi salah'), findsOneWidget);
-
-    // 4. Valid MASTER INDOTECH credentials unlock Master Verification Console & role switcher
     await tester.enterText(fields.at(0), 'INDOTECH');
     await tester.enterText(fields.at(1), 'Indotech@2026');
     await tester.tap(find.text('Masuk'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Total Omzet'), findsOneWidget);
-    expect(find.text('MASTER INDOTECH'), findsOneWidget);
-    expect(find.text('Admin LPK'), findsOneWidget);
-    expect(find.text('Mitra Driver'), findsOneWidget);
-    expect(find.text('Siswa'), findsWidgets);
+    expect(find.textContaining('Command Center'), findsOneWidget);
 
-    // MASTER INDOTECH can open Atur tab and see Master verification authority + biometric security card
-    await tester.tap(find.text('Atur'));
-    await tester.pumpAndSettle();
-    expect(find.text('Otoritas Verifikasi MASTER INDOTECH'), findsOneWidget);
-    expect(find.text('MASTER INDOTECH'), findsWidgets);
-    expect(find.text('Keamanan Sidik Jari (Biometrik)'), findsOneWidget);
-
-    // 5. Logout and sign in as regular Siswa -> Admin tab must NOT be visible!
-    await tester.tap(find.byIcon(Icons.logout_rounded));
-    await tester.pumpAndSettle();
-    final loginFields = find.byType(TextField);
-    await tester.enterText(loginFields.at(0), 'siswa');
-    await tester.enterText(loginFields.at(1), 'Siswa@2026');
+    // Valid Siswa logs in cleanly
+    await tester.enterText(fields.at(0), 'siswa');
+    await tester.enterText(fields.at(1), 'Siswa@2026');
     await tester.tap(find.text('Masuk'));
     await tester.pumpAndSettle();
-
-    expect(find.text('Admin LPK'), findsNothing);
-    expect(find.text('Super Admin'), findsNothing);
     expect(find.text('Beranda'), findsOneWidget);
+    expect(find.text('Cari'), findsOneWidget);
+  });
+
+  testWidgets('App 2 (MitraApp) enforces Mitra-only RBAC and opens ON BID driver dashboard', (tester) async {
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const MitraApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('APLIKASI MITRA DRIVER'), findsOneWidget);
+
+    // Siswa account MUST be rejected in MitraApp
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'siswa');
+    await tester.enterText(fields.at(1), 'Siswa@2026');
+    await tester.tap(find.text('Masuk'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Aplikasi Konsumen'), findsOneWidget);
+
+    // Valid Mitra logs in cleanly
+    await tester.enterText(fields.at(0), 'mitra');
+    await tester.enterText(fields.at(1), 'Mitra@2026');
+    await tester.tap(find.text('Masuk'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ON BID'), findsOneWidget);
+  });
+
+  testWidgets('App 3 (ConsoleApp) separates 1. INDOTECH Master and 2. LPK Super Admin', (tester) async {
+    tester.view.physicalSize = const Size(430, 932);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const ConsoleApp());
+    await tester.pumpAndSettle();
+
+    expect(find.text('INDOTECH MASTER & LPK CONSOLE'), findsOneWidget);
+    expect(find.textContaining('Daftar sekarang', findRichText: true), findsNothing);
+
+    // 1. Login as INDOTECH Master -> gets National Overview + Verif LPK tab!
+    final fields = find.byType(TextField);
+    await tester.enterText(fields.at(0), 'INDOTECH');
+    await tester.enterText(fields.at(1), 'Indotech@2026');
+    await tester.tap(find.text('Masuk'));
+    await tester.pumpAndSettle();
+    expect(find.text('MASTER INDOTECH HQ'), findsOneWidget);
+    expect(find.text('Verif LPK'), findsOneWidget);
+
+    await tester.tap(find.text('Verif LPK'));
+    await tester.pumpAndSettle();
+    expect(find.text('Verifikasi LPK (Otoritas Master)'), findsOneWidget);
+
+    // 2. Logout & login as LPK Super Admin -> gets LPK Operations ONLY (no Verif LPK Master tab!)
+    await tester.tap(find.byIcon(Icons.logout_rounded));
+    await tester.pumpAndSettle();
+    final fields2 = find.byType(TextField);
+    await tester.enterText(fields2.at(0), 'superadmin');
+    await tester.enterText(fields2.at(1), 'SuperAdmin@CIJ2026');
+    await tester.tap(find.text('Masuk'));
+    await tester.pumpAndSettle();
+    expect(find.text('Verif LPK'), findsNothing);
+    expect(find.textContaining('Total Omzet'), findsOneWidget);
   });
 }

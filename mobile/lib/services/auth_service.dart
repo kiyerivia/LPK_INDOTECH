@@ -113,10 +113,33 @@ class AuthService {
     }
   }
 
-  /// Authenticates via username/email/phone + password (checks Super Admin, registered accounts, and Supabase Auth)
+  static bool isRoleAllowedForFlavor(UserRole role, AppFlavor flavor) {
+    switch (flavor) {
+      case AppFlavor.user:
+        return role == UserRole.siswa;
+      case AppFlavor.mitra:
+        return role == UserRole.mitra;
+      case AppFlavor.console:
+        return role == UserRole.admin;
+      case AppFlavor.portal:
+        return true;
+    }
+  }
+
+  static String wrongAppMessage(UserRole actualRole, AppFlavor currentFlavor) {
+    final targetApp = actualRole == UserRole.admin
+        ? 'Command Center (INDOTECH Master / LPK)'
+        : actualRole == UserRole.mitra
+            ? 'Aplikasi Mitra Driver (CIJ Partner)'
+            : 'Aplikasi Konsumen / Siswa (CIJ Driving)';
+    return 'Akun ini terdaftar untuk $targetApp. Silakan login melalui aplikasi yang sesuai.';
+  }
+
+  /// Authenticates via username/email/phone + password with strict per-app flavor RBAC
   static Future<AuthResult> signIn({
     required String identifier,
     required String password,
+    AppFlavor flavor = AppFlavor.portal,
   }) async {
     final cleanId = identifier.trim().toLowerCase();
     if (cleanId.isEmpty || password.isEmpty) {
@@ -128,13 +151,19 @@ class AuthService {
 
     final inputHash = hashPassword(password);
 
-    // 1. Check managed local / built-in accounts (including Super Admin)
+    // 1. Check managed local / built-in accounts (including MASTER INDOTECH & Super Admin LPK)
     for (final acc in _accounts) {
       final matchesId = acc.username.toLowerCase() == cleanId ||
           acc.email.toLowerCase() == cleanId ||
           acc.phone.replaceAll('-', '') == cleanId.replaceAll('-', '');
       if (matchesId) {
         if (acc.passwordHash == inputHash) {
+          if (!isRoleAllowedForFlavor(acc.role, flavor)) {
+            return AuthResult(
+              success: false,
+              message: wrongAppMessage(acc.role, flavor),
+            );
+          }
           return AuthResult(
             success: true,
             message: acc.isMaster
@@ -164,12 +193,20 @@ class AuthService {
         if (user != null) {
           final meta = user.userMetadata ?? {};
           final roleStr = (meta['role'] as String? ?? 'siswa').toLowerCase();
-          final isSuper = roleStr == 'superadmin' || cleanId == 'superadmin@lpk-cij.id';
+          final isMaster = roleStr == 'master' || cleanId == 'master@indotech.id';
+          final isSuper = isMaster || roleStr == 'superadmin' || roleStr == 'lpk_admin';
           final role = isSuper || roleStr == 'admin'
               ? UserRole.admin
               : roleStr == 'mitra'
                   ? UserRole.mitra
                   : UserRole.siswa;
+
+          if (!isRoleAllowedForFlavor(role, flavor)) {
+            return AuthResult(
+              success: false,
+              message: wrongAppMessage(role, flavor),
+            );
+          }
 
           final account = ManagedAccount(
             username: cleanId.split('@').first,
@@ -179,6 +216,7 @@ class AuthService {
             passwordHash: inputHash,
             role: role,
             isSuperAdmin: isSuper,
+            isMaster: isMaster,
           );
           return AuthResult(
             success: true,

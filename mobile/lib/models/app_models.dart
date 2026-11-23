@@ -2,6 +2,49 @@ import 'package:flutter/foundation.dart';
 
 enum UserRole { siswa, mitra, admin }
 
+enum AppFlavor { user, mitra, console, portal }
+
+class LpkBranch {
+  final String id;
+  final String name;
+  final String city;
+  final String licenseNumber;
+  final String ownerName;
+  final String ownerPhone;
+  final int activeDrivers;
+  final int activeStudents;
+  final int monthlyOmzet;
+  final String status; // pending, verified, suspended
+
+  const LpkBranch({
+    required this.id,
+    required this.name,
+    required this.city,
+    required this.licenseNumber,
+    required this.ownerName,
+    required this.ownerPhone,
+    required this.activeDrivers,
+    required this.activeStudents,
+    required this.monthlyOmzet,
+    required this.status,
+  });
+
+  LpkBranch copyWith({String? status}) {
+    return LpkBranch(
+      id: id,
+      name: name,
+      city: city,
+      licenseNumber: licenseNumber,
+      ownerName: ownerName,
+      ownerPhone: ownerPhone,
+      activeDrivers: activeDrivers,
+      activeStudents: activeStudents,
+      monthlyOmzet: monthlyOmzet,
+      status: status ?? this.status,
+    );
+  }
+}
+
 enum TripStage {
   pending,      // Menunggu respon mitra
   accepted,     // Diterima & terjadwal
@@ -655,6 +698,58 @@ class AppState extends ChangeNotifier {
     const ServiceAreaConfig(name: 'Baturraden', activeDrivers: 2, active: true),
   ];
 
+  // Multi-LPK Registry (Verified & Governed by INDOTECH Master)
+  final List<LpkBranch> lpkBranches = [
+    const LpkBranch(
+      id: 'LPK-001',
+      name: 'LPK Citra Indotech Jaya (HQ)',
+      city: 'Purwokerto, Banyumas',
+      licenseNumber: 'KEMNAKER/563/LPK-CIJ/2025',
+      ownerName: 'Super Admin / LPK CIJ',
+      ownerPhone: '0811-2600-0001',
+      activeDrivers: 28,
+      activeStudents: 64,
+      monthlyOmzet: 48600000,
+      status: 'verified',
+    ),
+    const LpkBranch(
+      id: 'LPK-002',
+      name: 'LPK Satria Muda Mengemudi',
+      city: 'Cilacap Kota',
+      licenseNumber: 'KEMNAKER/214/LPK-CLP/2026',
+      ownerName: 'H. Sudirman',
+      ownerPhone: '0813-2811-4400',
+      activeDrivers: 12,
+      activeStudents: 29,
+      monthlyOmzet: 21500000,
+      status: 'pending',
+    ),
+    const LpkBranch(
+      id: 'LPK-003',
+      name: 'LPK Prima Drive Purbalingga',
+      city: 'Purbalingga',
+      licenseNumber: 'KEMNAKER/118/LPK-PBG/2026',
+      ownerName: 'Ibu Ratna Dewi',
+      ownerPhone: '0856-9012-3311',
+      activeDrivers: 8,
+      activeStudents: 18,
+      monthlyOmzet: 14200000,
+      status: 'pending',
+    ),
+    const LpkBranch(
+      id: 'LPK-004',
+      name: 'LPK Mandala Kebumen',
+      city: 'Kebumen',
+      licenseNumber: 'KEMNAKER/092/LPK-KBM/2025',
+      ownerName: 'Bapak Arifin',
+      ownerPhone: '0812-7741-9900',
+      activeDrivers: 15,
+      activeStudents: 38,
+      monthlyOmzet: 28900000,
+      status: 'verified',
+    ),
+  ];
+
   // ── Actions ──────────────────────────────────────────────────────
 
   void setRole(UserRole role) {
@@ -881,6 +976,48 @@ class AppState extends ChangeNotifier {
     serviceAreas[index] = serviceAreas[index].copyWith(active: !serviceAreas[index].active);
     notifyListeners();
   }
+
+  void setLpkBranchStatus(String id, String status) {
+    final idx = lpkBranches.indexWhere((b) => b.id == id);
+    if (idx != -1) {
+      lpkBranches[idx] = lpkBranches[idx].copyWith(status: status);
+      notifyListeners();
+    }
+  }
+
+  void registerLpkBranch({
+    required String name,
+    required String city,
+    required String licenseNumber,
+    required String ownerName,
+    required String ownerPhone,
+  }) {
+    lpkBranches.insert(
+      0,
+      LpkBranch(
+        id: 'LPK-00${lpkBranches.length + 1}',
+        name: name,
+        city: city,
+        licenseNumber: licenseNumber,
+        ownerName: ownerName,
+        ownerPhone: ownerPhone,
+        activeDrivers: 0,
+        activeStudents: 0,
+        monthlyOmzet: 0,
+        status: 'pending',
+      ),
+    );
+    notifyListeners();
+  }
+
+  int get totalNationalOmzet =>
+      lpkBranches.where((b) => b.status == 'verified').fold<int>(0, (sum, b) => sum + b.monthlyOmzet);
+
+  int get totalNationalDrivers =>
+      lpkBranches.where((b) => b.status == 'verified').fold<int>(0, (sum, b) => sum + b.activeDrivers);
+
+  int get totalNationalStudents =>
+      lpkBranches.where((b) => b.status == 'verified').fold<int>(0, (sum, b) => sum + b.activeStudents);
 
   double get studentAvgScore {
     final scored = modules.where((m) => m.score != null).toList();
