@@ -33,5 +33,5 @@ flutter run -d chrome -t lib/main_console.dart
 - **Vercel Hosting:** akun `bintangarifiano@gmail.com` (4 project paralel via `.github/workflows/deploy-vercel.yml`)
 - **Supabase Backend:** akun `bintangarifiano@gmail.com`
 
-Setiap push ke branch `main` yang mengubah `mobile/**` akan otomatis mem-build dan men-deploy keempat aplikasi secara paralel menggunakan secret `VERCEL_TOKEN`.
+Setiap push ke branch `main` yang mengubah `mobile/**` akan otomatis mem-build dan men-deploy keempat aplikasi secara paralel menggunakan secret `VERCEL_TOKEN` (`Deploy CIJ Multi-App Ecosystem to Vercel`).
 
