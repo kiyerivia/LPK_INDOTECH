@@ -33,10 +33,6 @@ jobs:
             project_id: prj_g2EbpK3Bkv2ifXJZUnsF41QRkeAL
             target: lib/main_console.dart
             url: https://cij-console.vercel.app
-          - name: lpk-indotech
-            project_id: prj_4KEA2cW43bBbdvmv62cZiVE8lI8n
-            target: lib/main.dart
-            url: https://lpk-indotech.vercel.app
 
     steps:
       - name: Checkout repository

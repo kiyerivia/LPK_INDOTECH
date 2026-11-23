@@ -11,7 +11,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('Ecosystem Portal Launcher displays all 3 separate apps', (tester) async {
+  testWidgets('Default LPKIndotechApp launches App 1 (UserApp / Siswa) directly without portal', (tester) async {
     tester.view.physicalSize = const Size(430, 932);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -19,9 +19,8 @@ void main() {
     await tester.pumpWidget(const LPKIndotechApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('CIJ Driving (Siswa)'), findsOneWidget);
-    expect(find.text('CIJ Partner (Instruktur)'), findsOneWidget);
-    expect(find.text('CIJ Command Center'), findsOneWidget);
+    expect(find.text('APLIKASI KONSUMEN / SISWA'), findsOneWidget);
+    expect(find.text('Pilih Aplikasi Ekosistem Driving Partner'), findsNothing);
   });
 
   testWidgets('App 1 (UserApp) enforces Siswa-only RBAC and opens consumer dashboard', (tester) async {

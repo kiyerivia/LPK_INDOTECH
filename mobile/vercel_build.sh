@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-TARGET="${APP_TARGET:-lib/main.dart}"
+TARGET="${APP_TARGET:-lib/main_user.dart}"
 echo "=== Building CIJ Flutter Web target: ${TARGET} ==="
 
 if [ ! -d flutter ]; then
