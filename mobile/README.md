@@ -29,5 +29,5 @@ flutter run -d chrome -t lib/main_console.dart
 
 ## Auto-Deploy Vercel
 
-Semua project di atas tersambung ke branch `main` dengan `Root Directory: mobile` dan script build `vercel_build.sh`.
+Semua project di atas tersambung ke branch `main` (akun `bintangarifiano`) dengan `Root Directory: mobile` dan script build `vercel_build.sh`.
 
