@@ -27,7 +27,11 @@ flutter run -d chrome -t lib/main_mitra.dart
 flutter run -d chrome -t lib/main_console.dart
 ```
 
-## Auto-Deploy Vercel
+## Auto-Deploy Vercel (GitHub Actions)
 
-Semua project di atas tersambung ke branch `main` (akun `bintangarifiano`) dengan `Root Directory: mobile` dan script build `vercel_build.sh`.
+- **GitHub Repo:** `kiyerivia/LPK_INDOTECH` (`kiyerivia@gmail.com`)
+- **Vercel Hosting:** akun `bintangarifiano@gmail.com` (4 project paralel via `.github/workflows/deploy-vercel.yml`)
+- **Supabase Backend:** akun `bintangarifiano@gmail.com`
+
+Setiap push ke branch `main` yang mengubah `mobile/**` akan otomatis mem-build dan men-deploy keempat aplikasi secara paralel menggunakan secret `VERCEL_TOKEN`.
 

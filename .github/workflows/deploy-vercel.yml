@@ -1,0 +1,94 @@
+name: Deploy CIJ Multi-App Ecosystem to Vercel
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/deploy-vercel.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: vercel-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: cij-driving
+            project_id: prj_Oackx32lA5Ej2Q5etUaHI7BEQ7DS
+            target: lib/main_user.dart
+            url: https://cij-driving.vercel.app
+          - name: cij-partner
+            project_id: prj_zUkPvuR2y4NTm4KaGTyBT3f14PSM
+            target: lib/main_mitra.dart
+            url: https://cij-partner.vercel.app
+          - name: cij-console
+            project_id: prj_g2EbpK3Bkv2ifXJZUnsF41QRkeAL
+            target: lib/main_console.dart
+            url: https://cij-console.vercel.app
+          - name: lpk-indotech
+            project_id: prj_4KEA2cW43bBbdvmv62cZiVE8lI8n
+            target: lib/main.dart
+            url: https://lpk-indotech.vercel.app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify VERCEL_TOKEN secret
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::error::Secret VERCEL_TOKEN belum diatur di GitHub Repository Secrets (Settings -> Secrets and variables -> Actions)."
+            exit 1
+          fi
+
+      - name: Setup Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build Flutter Web (${{ matrix.target }})
+        working-directory: mobile
+        run: |
+          flutter pub get
+          flutter build web --release --no-wasm-dry-run -t "${{ matrix.target }}"
+
+      - name: Prepare Vercel Build Output API v3 bundle
+        run: |
+          mkdir -p deploy_stage/.vercel/output/static
+          cp -r mobile/build/web/* deploy_stage/.vercel/output/static/
+          cat <<'EOF' > deploy_stage/.vercel/output/config.json
+          {
+            "version": 3,
+            "routes": [
+              { "handle": "filesystem" },
+              { "src": "/(.*)", "dest": "/index.html" }
+            ]
+          }
+          EOF
+          cat <<EOF > deploy_stage/.vercel/project.json
+          {
+            "orgId": "team_hx7nBoz3z33RhMfXIWIjxNnG",
+            "projectId": "${{ matrix.project_id }}"
+          }
+          EOF
+
+      - name: Deploy ${{ matrix.name }} to Vercel Production
+        working-directory: deploy_stage
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: team_hx7nBoz3z33RhMfXIWIjxNnG
+          VERCEL_PROJECT_ID: ${{ matrix.project_id }}
+        run: |
+          npx --yes vercel@latest deploy --prebuilt --prod --yes --token="$VERCEL_TOKEN"
+          echo "Deployed ${{ matrix.name }} -> ${{ matrix.url }}"
