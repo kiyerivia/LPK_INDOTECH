@@ -1,6 +1,6 @@
 {
-  "buildCommand": "if [ ! -d flutter ]; then git clone https://github.com/flutter/flutter.git -b stable --depth 1; fi && flutter/bin/flutter config --enable-web && flutter/bin/flutter pub get && flutter/bin/flutter build web --release --no-wasm-dry-run -t ${APP_TARGET:-lib/main.dart}",
-  "installCommand": "echo 'Flutter install handled in buildCommand'",
+  "buildCommand": "bash vercel_build.sh",
+  "installCommand": "echo ok",
   "outputDirectory": "build/web",
   "rewrites": [
     {
