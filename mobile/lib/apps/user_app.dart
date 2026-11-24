@@ -3,7 +3,7 @@ import '../models/app_models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neon_navbar.dart';
 import '../widgets/booking_sheet.dart';
-import '../screens/auth/auth_dashboard_screen.dart';
+import '../screens/auth/user_auth_screen.dart';
 import '../screens/siswa/siswa_home_screen.dart';
 import '../screens/siswa/siswa_search_screen.dart';
 import '../screens/siswa/siswa_schedule_screen.dart';
@@ -88,11 +88,9 @@ class _UserAppShellState extends State<UserAppShell> {
   Widget build(BuildContext context) {
     final loggedInAsUser = _appState.isLoggedIn && _appState.currentRole == UserRole.siswa;
     if (!loggedInAsUser) {
-      return AuthDashboardScreen(
+      return UserAuthScreen(
         appState: _appState,
-        flavor: AppFlavor.user,
         onAuthenticated: () => setState(() => _tab = 0),
-        onBackToPortal: widget.onBackToPortal,
       );
     }
 

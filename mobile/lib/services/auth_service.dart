@@ -164,6 +164,12 @@ class AuthService {
               message: wrongAppMessage(acc.role, flavor),
             );
           }
+          if (acc.role == UserRole.admin && !acc.isMaster && !acc.verifiedByMaster) {
+            return const AuthResult(
+              success: false,
+              message: 'Akun Super Admin / LPK Anda sedang menunggu verifikasi dari MASTER INDOTECH.',
+            );
+          }
           return AuthResult(
             success: true,
             message: acc.isMaster
@@ -301,6 +307,78 @@ class AuthService {
       success: true,
       message: 'Akun ${newAccount.fullName} berhasil didaftarkan!',
       account: newAccount,
+    );
+  }
+
+  /// Submits a new LPK Branch (Super Admin / LPK) application awaiting MASTER INDOTECH approval.
+  static Future<AuthResult> registerLpkApplicant({
+    required String lpkName,
+    required String city,
+    required String licenseNumber,
+    required String ownerName,
+    required String phone,
+    required String email,
+    required String password,
+  }) async {
+    if (lpkName.trim().isEmpty ||
+        city.trim().isEmpty ||
+        licenseNumber.trim().isEmpty ||
+        ownerName.trim().isEmpty ||
+        email.trim().isEmpty ||
+        password.length < 6) {
+      return const AuthResult(
+        success: false,
+        message: 'Lengkapi nama LPK, kota, nomor izin Kemnaker, penanggung jawab, email, dan kata sandi (min. 6 karakter).',
+      );
+    }
+
+    final cleanEmail = email.trim().toLowerCase();
+    final username = cleanEmail.contains('@') ? cleanEmail.split('@').first : cleanEmail;
+    final alreadyExists = _accounts.any(
+      (a) => a.email.toLowerCase() == cleanEmail || a.username.toLowerCase() == username,
+    );
+    if (alreadyExists) {
+      return const AuthResult(
+        success: false,
+        message: 'Email atau username LPK tersebut sudah terdaftar.',
+      );
+    }
+
+    if (cleanEmail.contains('@')) {
+      try {
+        await Supabase.instance.client.auth.signUp(
+          email: cleanEmail,
+          password: password,
+          data: {
+            'full_name': ownerName.trim(),
+            'phone': phone.trim(),
+            'role': 'lpk_admin',
+            'lpk_name': lpkName.trim(),
+            'city': city.trim(),
+            'license_number': licenseNumber.trim(),
+            'verified_by_master': false,
+          },
+        );
+      } catch (_) {}
+    }
+
+    final pendingLpkAccount = ManagedAccount(
+      username: username,
+      email: cleanEmail,
+      fullName: '${ownerName.trim()} (${lpkName.trim()})',
+      phone: phone.trim().isEmpty ? '-' : phone.trim(),
+      passwordHash: hashPassword(password),
+      role: UserRole.admin,
+      isSuperAdmin: true,
+      isMaster: false,
+      verifiedByMaster: false,
+    );
+    _accounts.add(pendingLpkAccount);
+
+    return AuthResult(
+      success: true,
+      message: 'Pengajuan ${lpkName.trim()} terkirim! Menunggu verifikasi MASTER INDOTECH.',
+      account: pendingLpkAccount,
     );
   }
 }

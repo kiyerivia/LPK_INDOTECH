@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neon_navbar.dart';
-import '../screens/auth/auth_dashboard_screen.dart';
+import '../screens/auth/console_auth_screen.dart';
 import '../screens/master/master_overview_screen.dart';
 import '../screens/master/master_lpk_screen.dart';
 import '../screens/admin/admin_overview_screen.dart';
@@ -77,14 +77,12 @@ class _ConsoleAppShellState extends State<ConsoleAppShell> {
   Widget build(BuildContext context) {
     final loggedInAsConsole = _appState.isLoggedIn && _appState.currentRole == UserRole.admin;
     if (!loggedInAsConsole) {
-      return AuthDashboardScreen(
+      return ConsoleAuthScreen(
         appState: _appState,
-        flavor: AppFlavor.console,
         onAuthenticated: () => setState(() {
           _tab = 0;
           _masterViewingLpkMode = false;
         }),
-        onBackToPortal: widget.onBackToPortal,
       );
     }
 

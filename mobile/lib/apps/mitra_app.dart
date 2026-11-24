@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import '../theme/app_theme.dart';
 import '../widgets/neon_navbar.dart';
-import '../screens/auth/auth_dashboard_screen.dart';
+import '../screens/auth/mitra_auth_screen.dart';
 import '../screens/mitra/mitra_order_screen.dart';
 import '../screens/mitra/mitra_eval_screen.dart';
 import '../screens/mitra/mitra_wallet_screen.dart';
@@ -70,11 +70,9 @@ class _MitraAppShellState extends State<MitraAppShell> {
   Widget build(BuildContext context) {
     final loggedInAsMitra = _appState.isLoggedIn && _appState.currentRole == UserRole.mitra;
     if (!loggedInAsMitra) {
-      return AuthDashboardScreen(
+      return MitraAuthScreen(
         appState: _appState,
-        flavor: AppFlavor.mitra,
         onAuthenticated: () => setState(() => _tab = 0),
-        onBackToPortal: widget.onBackToPortal,
       );
     }
 
