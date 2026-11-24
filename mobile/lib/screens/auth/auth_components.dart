@@ -10,6 +10,13 @@ class AuthComponents {
   static const Color textMain = Color(0xFF1F2937);
   static const Color textMuted = Color(0xFF6B7280);
 
+  // Matte Doff Dark Gray palette + deep dark shadow for active pills & action buttons
+  static const Color matteTop = Color(0xFF3E4550);
+  static const Color matteBottom = Color(0xFF232830);
+  static const Color matteBorder = Color(0xFF525A66);
+  static const Color matteTrackBg = Color(0xFFF1F3F6);
+  static const Color matteTrackBorder = Color(0xFFD5DAE1);
+
   static Widget logoBanner({double width = 220, double height = 136, Color fallbackColor = const Color(0xFFDC2626)}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -93,8 +100,8 @@ class AuthComponents {
 
   static Widget gradientButton({
     required String label,
-    required List<Color> gradientColors,
-    required Color shadowColor,
+    List<Color>? gradientColors,
+    Color? shadowColor,
     IconData? icon,
     VoidCallback? onTap,
   }) {
@@ -108,17 +115,25 @@ class AuthComponents {
           height: 52,
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
+            color: Colors.white,
             borderRadius: BorderRadius.circular(26),
-            gradient: LinearGradient(
-              colors: gradientColors,
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-            ),
+            border: Border.all(color: const Color(0xFFE2E8F0), width: 1.2),
             boxShadow: [
+              const BoxShadow(
+                color: Colors.white,
+                offset: Offset(-2, -2),
+                blurRadius: 6,
+              ),
               BoxShadow(
-                color: shadowColor.withValues(alpha: 0.34),
+                color: const Color(0xFF0F172A).withValues(alpha: 0.16),
                 offset: const Offset(0, 8),
-                blurRadius: 18,
+                blurRadius: 20,
+                spreadRadius: -2,
+              ),
+              BoxShadow(
+                color: const Color(0xFF000000).withValues(alpha: 0.08),
+                offset: const Offset(0, 2),
+                blurRadius: 6,
               ),
             ],
           ),
@@ -127,7 +142,7 @@ class AuthComponents {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, color: Colors.white, size: 18),
+                Icon(icon, color: textMain, size: 18),
                 const SizedBox(width: 8),
               ],
               Flexible(
@@ -136,10 +151,10 @@ class AuthComponents {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: textMain,
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 0.25,
+                    letterSpacing: 0.2,
                   ),
                 ),
               ),
@@ -150,22 +165,35 @@ class AuthComponents {
     );
   }
 
+  static Widget appTitle(String title) {
+    return Text(
+      title,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        color: textMain,
+        fontSize: 21,
+        fontWeight: FontWeight.w900,
+        letterSpacing: 0.3,
+      ),
+    );
+  }
+
   static Widget modeSwitcher({
     required bool isLogin,
     required String loginLabel,
     required String registerLabel,
-    required List<Color> activeGradient,
-    required Color activeShadow,
-    required Color trackBg,
-    required Color trackBorder,
+    List<Color>? activeGradient,
+    Color? activeShadow,
+    Color? trackBg,
+    Color? trackBorder,
     required ValueChanged<bool> onSelectLogin,
   }) {
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: trackBg,
+        color: matteTrackBg,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: trackBorder.withValues(alpha: 0.5)),
+        border: Border.all(color: matteTrackBorder.withValues(alpha: 0.85)),
       ),
       child: Row(
         children: [
@@ -174,17 +202,37 @@ class AuthComponents {
               onTap: () => onSelectLogin(true),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
                 decoration: BoxDecoration(
-                  gradient: isLogin ? LinearGradient(colors: activeGradient) : null,
+                  gradient: isLogin
+                      ? const LinearGradient(
+                          colors: [matteTop, matteBottom],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        )
+                      : null,
                   borderRadius: BorderRadius.circular(18),
+                  border: isLogin ? Border.all(color: matteBorder.withValues(alpha: 0.7), width: 0.9) : null,
                   boxShadow: isLogin
-                      ? [BoxShadow(color: activeShadow.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4))]
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.34),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF000000).withValues(alpha: 0.18),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
                       : null,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   loginLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: isLogin ? Colors.white : textMuted,
                     fontSize: 12.5,
@@ -199,17 +247,37 @@ class AuthComponents {
               onTap: () => onSelectLogin(false),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
                 decoration: BoxDecoration(
-                  gradient: !isLogin ? LinearGradient(colors: activeGradient) : null,
+                  gradient: !isLogin
+                      ? const LinearGradient(
+                          colors: [matteTop, matteBottom],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        )
+                      : null,
                   borderRadius: BorderRadius.circular(18),
+                  border: !isLogin ? Border.all(color: matteBorder.withValues(alpha: 0.7), width: 0.9) : null,
                   boxShadow: !isLogin
-                      ? [BoxShadow(color: activeShadow.withValues(alpha: 0.25), blurRadius: 10, offset: const Offset(0, 4))]
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.34),
+                            blurRadius: 12,
+                            offset: const Offset(0, 5),
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF000000).withValues(alpha: 0.18),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
                       : null,
                 ),
                 alignment: Alignment.center,
                 child: Text(
                   registerLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: !isLogin ? Colors.white : textMuted,
                     fontSize: 12.5,
@@ -362,5 +430,111 @@ class AuthComponents {
     } else {
       await Future.delayed(const Duration(milliseconds: 300));
     }
+  }
+
+  /// Dedicated Email Verification confirmation view shown after real Supabase signUp
+  static Widget emailVerificationView({
+    required String email,
+    required Color accentColor,
+    required String title,
+    required String subtitle,
+    required bool resending,
+    String? resendInfo,
+    required VoidCallback onResend,
+    required VoidCallback onBackToLogin,
+  }) {
+    return Column(
+      children: [
+        const SizedBox(height: 6),
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: accentColor.withValues(alpha: 0.12),
+            border: Border.all(color: accentColor, width: 2.2),
+          ),
+          child: Icon(Icons.mark_email_unread_rounded, color: accentColor, size: 36),
+        ),
+        const SizedBox(height: 14),
+        Text(
+          title,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: textMain, fontSize: 17.5, fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          decoration: BoxDecoration(
+            color: matteTrackBg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: matteTrackBorder),
+          ),
+          child: Text(
+            email,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: textMain, fontSize: 12.5, fontWeight: FontWeight.w800),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          subtitle,
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: textMuted, fontSize: 12, height: 1.45),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF8FAFC),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: matteTrackBorder),
+          ),
+          child: const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Langkah verifikasi:', style: TextStyle(color: textMain, fontSize: 11.5, fontWeight: FontWeight.w800)),
+              SizedBox(height: 4),
+              Text('1. Buka Inbox (atau folder Spam / Promosi) di email Anda.', style: TextStyle(color: textMuted, fontSize: 11, height: 1.35)),
+              Text('2. Klik tautan "Confirm your mail" untuk mengaktifkan akun.', style: TextStyle(color: textMuted, fontSize: 11, height: 1.35)),
+              Text('3. Kembali ke aplikasi ini lalu masuk dengan email & sandi Anda.', style: TextStyle(color: textMuted, fontSize: 11, height: 1.35)),
+            ],
+          ),
+        ),
+        if (resendInfo != null) ...[
+          const SizedBox(height: 12),
+          infoBanner(resendInfo, color: AppColors.emerald),
+        ],
+        const SizedBox(height: 16),
+        gradientButton(
+          label: 'Sudah Verifikasi — Masuk Sekarang',
+          icon: Icons.login_rounded,
+          onTap: onBackToLogin,
+        ),
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: resending ? null : onResend,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: matteTrackBorder, width: 1.3),
+            ),
+            alignment: Alignment.center,
+            child: Text(
+              resending ? 'Mengirim ulang email...' : 'Kirim Ulang Email Verifikasi',
+              style: TextStyle(
+                color: resending ? textMuted : textMain,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

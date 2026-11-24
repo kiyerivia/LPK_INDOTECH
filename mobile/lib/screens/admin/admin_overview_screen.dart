@@ -10,7 +10,7 @@ class AdminOverviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const monthlyOmzet = 48600000;
+    final monthlyOmzet = appState.totalBranchOmzet;
     final mitraPayout = (monthlyOmzet * appState.mitraSplitPercent / 100).round();
     final lpkShare = (monthlyOmzet * appState.lpkSplitPercent / 100).round();
     final platformShare = monthlyOmzet - mitraPayout - lpkShare;
@@ -69,9 +69,9 @@ class AdminOverviewScreen extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.trending_up_rounded, color: Colors.white, size: 13),
+                          Icon(Icons.verified_rounded, color: Colors.white, size: 13),
                           SizedBox(width: 4),
-                          Text('+18.4% MoM', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                          Text('Beta Live', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
                         ],
                       ),
                     ),
@@ -96,7 +96,7 @@ class AdminOverviewScreen extends StatelessWidget {
             children: [
               _kpi('Mitra Aktif', '${appState.instructors.length} Driver', 'Tersertifikasi Rem Ganda', AppColors.emerald),
               const SizedBox(width: 10),
-              _kpi('Siswa Aktif', '64 Siswa', '12 siap ujian SIM A', AppColors.primary),
+              _kpi('Siswa Aktif', '${appState.activeStudentCount} Siswa', '${appState.graduations.where((g) => g.approved).length} lulus sertifikat', AppColors.primary),
             ],
           ),
           const SizedBox(height: 10),
@@ -143,7 +143,19 @@ class AdminOverviewScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Text('Pantauan Jadwal & Order Live', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          ...appState.orders.take(4).map((o) => GlassCard(
+          if (appState.orders.isEmpty)
+            const GlassCard(
+              padding: EdgeInsets.all(18),
+              child: Center(
+                child: Text(
+                  'Belum ada transaksi atau jadwal order masuk. Order dari CIJ Driving akan muncul real-time di sini.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ),
+            )
+          else
+            ...appState.orders.take(4).map((o) => GlassCard(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(13),
                 child: Row(

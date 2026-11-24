@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_version.dart';
 import '../../models/app_models.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/biometric_card.dart';
@@ -43,11 +44,11 @@ class _MitraProfileScreenState extends State<MitraProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _docRow('Identitas e-KTP & SKCK', 'Terverifikasi'),
-                _docRow('SIM A Umum / SIM B1 Aktif', 'Berlaku s/d 2029'),
-                _docRow('STNK & Foto Toyota Avanza (R 1842 BS)', 'Terverifikasi'),
-                _docRow('Braket Pedal Rem Ganda Standar LPK', 'Lulus Uji Safety'),
-                _docRow('Sertifikasi Mengajar (TOT Instruktur)', 'Aktif • LPK Indotech'),
+                _docRow('Identitas e-KTP & SKCK', 'Belum diunggah'),
+                _docRow('SIM A Umum / SIM B1 Aktif', 'Menunggu verifikasi'),
+                _docRow('STNK & Armada (${app.mitraCarInfo})', 'Menunggu verifikasi'),
+                _docRow('Braket Pedal Rem Ganda Standar LPK', 'Wajib Uji Safety LPK'),
+                _docRow('Sertifikasi Mengajar (TOT Instruktur)', 'LPK Citra Indotech Jaya'),
                 const SizedBox(height: 12),
                 NeonButton(
                   label: 'Daftar / Ajukan Mitra Driver Baru (KYC)',
@@ -162,6 +163,15 @@ class _MitraProfileScreenState extends State<MitraProfileScreen> {
                   }).toList(),
                 ),
               ],
+            ),
+          ),
+
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              '${AppVersions.partner.fullLabel} • ${AppVersions.partner.releaseDate}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w600),
             ),
           ),
         ],

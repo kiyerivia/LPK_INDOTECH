@@ -13,7 +13,7 @@ class SiswaReportScreen extends StatefulWidget {
 }
 
 class _SiswaReportScreenState extends State<SiswaReportScreen> {
-  final List<bool> _simChecklist = [true, true, false, false];
+  final List<bool> _simChecklist = [false, false, false, false];
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +40,7 @@ class _SiswaReportScreenState extends State<SiswaReportScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      avg.toStringAsFixed(1),
+                      doneCount > 0 ? avg.toStringAsFixed(1) : '—',
                       style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: AppColors.primary, height: 1),
                     ),
                     const Padding(
@@ -51,8 +51,12 @@ class _SiswaReportScreenState extends State<SiswaReportScreen> {
                 ),
                 const SizedBox(height: 8),
                 StatusPill(
-                  label: avg >= 85 ? 'SANGAT BAIK • SIAP UJIAN SIM A' : 'DALAM PROSES LATIHAN',
-                  color: AppColors.emerald,
+                  label: doneCount == 0
+                      ? 'BELUM ADA NILAI • MULAI LATIHAN'
+                      : avg >= 85
+                          ? 'SANGAT BAIK • SIAP UJIAN SIM A'
+                          : 'DALAM PROSES LATIHAN',
+                  color: doneCount == 0 ? AppColors.textMuted : AppColors.emerald,
                   icon: Icons.emoji_events_rounded,
                 ),
                 const SizedBox(height: 16),

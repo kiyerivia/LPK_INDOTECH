@@ -213,7 +213,7 @@ class _MitraAppShellState extends State<MitraAppShell> {
                   const Icon(Icons.local_taxi_rounded, size: 14, color: AppColors.emerald),
                   const SizedBox(width: 5),
                   Text(
-                    _appState.userName.split(' ').first,
+                    _appState.userName.trim().isNotEmpty ? _appState.userName.trim().split(' ').first : 'Mitra',
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(width: 6),

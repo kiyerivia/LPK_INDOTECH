@@ -162,7 +162,11 @@ class MasterOverviewScreen extends StatelessWidget {
               padding: const EdgeInsets.all(14),
               child: Row(
                 children: [
-                  AvatarInitial(initial: lpk.name.substring(4, 5).toUpperCase(), size: 42, online: isVerified),
+                  AvatarInitial(
+                    initial: lpk.name.trim().isNotEmpty ? lpk.name.trim()[0].toUpperCase() : 'L',
+                    size: 42,
+                    online: isVerified,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(

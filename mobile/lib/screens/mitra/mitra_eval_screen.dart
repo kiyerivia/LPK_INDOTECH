@@ -13,19 +13,17 @@ class MitraEvalScreen extends StatefulWidget {
 }
 
 class _MitraEvalScreenState extends State<MitraEvalScreen> {
-  String _selectedModuleId = 'MOD-4';
-  double _score = 90;
-  final _notesCtrl = TextEditingController(
-    text: 'Penguasaan setir dan parkir seri sudah stabil. Terus latih kewaspadaan spion kiri saat pindah jalur.',
-  );
+  String _selectedModuleId = 'MOD-1';
+  double _score = 80;
+  final _notesCtrl = TextEditingController();
 
   final Map<String, bool> _skills = {
-    'Penguasaan setir & posisi lajur': true,
-    'Koordinasi pedal gas, rem & kopling': true,
-    'Teknik stop & go tanjakan aman': true,
-    'Parkir seri & paralel rapi': true,
+    'Penguasaan setir & posisi lajur': false,
+    'Koordinasi pedal gas, rem & kopling': false,
+    'Teknik stop & go tanjakan aman': false,
+    'Parkir seri & paralel rapi': false,
     'Disiplin spion, sein & rambu lalu lintas': false,
-    'Ketenangan & tidak panik di kemacetan': true,
+    'Ketenangan & tidak panik di kemacetan': false,
   };
 
   @override
@@ -66,7 +64,9 @@ class _MitraEvalScreenState extends State<MitraEvalScreen> {
                 const Text('Input Penilaian Siswa', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Text(
-                  'Siswa: ${widget.appState.userName} • Nilai langsung tersinkron ke Rapor Siswa & diverifikasi Admin LPK.',
+                  widget.appState.orders.isEmpty
+                      ? 'Belum ada sesi siswa aktif • Nilai yang dikirim akan tersinkron ke Rapor Siswa & Admin LPK.'
+                      : 'Siswa: ${widget.appState.orders.first.studentName} • Nilai langsung tersinkron ke Rapor Siswa & diverifikasi Admin LPK.',
                   style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                 ),
                 const SizedBox(height: 14),

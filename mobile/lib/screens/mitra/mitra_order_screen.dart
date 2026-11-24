@@ -54,21 +54,39 @@ class MitraOrderScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    AvatarInitial(initial: 'BS', size: 48, online: appState.mitraIsOnline),
+                    AvatarInitial(
+                      initial: appState.userName.trim().isNotEmpty
+                          ? appState.userName.trim().split(' ').take(2).map((w) => w[0].toUpperCase()).join()
+                          : 'M',
+                      size: 48,
+                      online: appState.mitraIsOnline,
+                    ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              Text('Bambang Sugiantoro', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15)),
-                              SizedBox(width: 6),
-                              Icon(Icons.verified_rounded, color: Colors.white, size: 16),
+                              Flexible(
+                                child: Text(
+                                  appState.userName.isNotEmpty ? appState.userName : 'Mitra Driver',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 15),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              const Icon(Icons.verified_rounded, color: Colors.white, size: 16),
                             ],
                           ),
-                          SizedBox(height: 2),
-                          Text('Toyota Avanza • R 1842 BS • Rem Ganda OK', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                          const SizedBox(height: 2),
+                          Text(
+                            appState.mitraCarInfo,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                          ),
                         ],
                       ),
                     ),

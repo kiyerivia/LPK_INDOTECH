@@ -120,7 +120,19 @@ class MitraWalletScreen extends StatelessWidget {
           const Text('Riwayat Insentif & Pencairan', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
 
-          ...appState.walletTransactions.map((trx) => GlassCard(
+          if (appState.walletTransactions.isEmpty)
+            const GlassCard(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                child: Text(
+                  'Belum ada riwayat insentif atau penarikan saldo. Insentif 60% otomatis masuk setelah sesi pelatihan selesai.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ),
+            )
+          else
+            ...appState.walletTransactions.map((trx) => GlassCard(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
                 child: Row(

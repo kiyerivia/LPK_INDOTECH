@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_version.dart';
 import '../../models/app_models.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
@@ -32,9 +33,13 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
   _ConsoleAuthMode _mode = _ConsoleAuthMode.login;
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _resending = false;
   bool _resetSent = false;
   bool _lpkSubmitted = false;
+  int _failedAttempts = 0;
   String? _error;
+  String? _resendInfo;
+  String? _pendingEmail;
   String _submittedLpkName = '';
   BiometricBinding? _enrolledBiometric;
 
@@ -83,6 +88,7 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
       _error = null;
     });
 
+    final attemptedId = _idCtrl.text.trim();
     final result = await AuthService.signIn(
       identifier: _idCtrl.text,
       password: _passCtrl.text,
@@ -91,12 +97,31 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     if (!mounted) return;
 
     if (!result.success || result.account == null) {
+      _idCtrl.clear();
+      _passCtrl.clear();
       setState(() {
         _loading = false;
-        _error = result.message;
+        _resendInfo = null;
+        if (result.requiresEmailVerification && result.pendingEmail != null) {
+          _pendingEmail = result.pendingEmail;
+          _error = result.message;
+        } else {
+          _failedAttempts += 1;
+          if (_failedAttempts >= 5) {
+            _failedAttempts = 0;
+            _resetSent = false;
+            if (attemptedId.isNotEmpty) _resetCtrl.text = attemptedId;
+            _mode = _ConsoleAuthMode.forgot;
+            _error = 'Anda sudah 5x salah memasukkan akun/kata sandi. Silakan pulihkan akses Console Anda.';
+          } else {
+            _error = '${result.message} (Percobaan $_failedAttempts/5)';
+          }
+        }
       });
       return;
     }
+
+    _failedAttempts = 0;
 
     final acc = result.account!;
     widget.appState.login(
@@ -187,6 +212,26 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
       _loading = false;
       _lpkSubmitted = true;
       _submittedLpkName = branchName;
+      _pendingEmail = result.pendingEmail ?? _idCtrl.text.trim().toLowerCase();
+    });
+  }
+
+  Future<void> _handleResendVerification() async {
+    final email = _pendingEmail ?? _idCtrl.text.trim().toLowerCase();
+    setState(() {
+      _resending = true;
+      _error = null;
+      _resendInfo = null;
+    });
+    final res = await AuthService.resendVerificationEmail(email: email, flavor: AppFlavor.console);
+    if (!mounted) return;
+    setState(() {
+      _resending = false;
+      if (res.success) {
+        _resendInfo = res.message;
+      } else {
+        _error = res.message;
+      }
     });
   }
 
@@ -391,47 +436,43 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
           ),
           if (!compactHeader) ...[
             AuthComponents.logoBanner(width: 204, height: 124, fallbackColor: _crimson),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
           ],
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              color: _indigo.withValues(alpha: 0.09),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _indigo.withValues(alpha: 0.35)),
-            ),
-            child: const Text(
-              'INDOTECH MASTER & LPK CONSOLE',
+          AuthComponents.appTitle('CIJ Master'),
+          if (_mode == _ConsoleAuthMode.registerLpk) ...[
+            const SizedBox(height: 4),
+            const Text(
+              'Pendaftaran Cabang LPK / Super Admin Baru',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _indigo,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 0.65,
-              ),
+              style: TextStyle(color: AuthComponents.textMuted, fontSize: 11.5, fontWeight: FontWeight.w600),
             ),
-          ),
-          const SizedBox(height: 16),
-
-          if (_mode != _ConsoleAuthMode.forgot) ...[
-            AuthComponents.modeSwitcher(
-              isLogin: _mode == _ConsoleAuthMode.login,
-              loginLabel: 'Masuk Console',
-              registerLabel: 'Daftar LPK Baru',
-              activeGradient: const [_crimson, _indigo],
-              activeShadow: _indigo,
-              trackBg: const Color(0xFFF5F3FF),
-              trackBorder: _indigoBorder,
-              onSelectLogin: (login) => setState(() {
-                _error = null;
-                _lpkSubmitted = false;
-                _mode = login ? _ConsoleAuthMode.login : _ConsoleAuthMode.registerLpk;
-              }),
-            ),
-            const SizedBox(height: 18),
           ],
+          const SizedBox(height: 18),
 
-          if (_error != null) AuthComponents.errorBanner(_error!),
+          if (_error != null) ...[
+            AuthComponents.errorBanner(_error!),
+            if (_pendingEmail != null && _mode == _ConsoleAuthMode.login) ...[
+              Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: GestureDetector(
+                  onTap: _resending ? null : _handleResendVerification,
+                  child: Text(
+                    _resending
+                        ? 'Mengirim ulang tautan verifikasi...'
+                        : 'Kirim ulang email verifikasi ke $_pendingEmail →',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: _indigo,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+          if (_resendInfo != null && _mode == _ConsoleAuthMode.login)
+            AuthComponents.infoBanner(_resendInfo!, color: AppColors.emerald),
 
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 240),
@@ -442,6 +483,16 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
                   : _mode == _ConsoleAuthMode.registerLpk
                       ? _buildRegisterLpkForm()
                       : _buildForgotForm(),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            AppVersions.console.fullLabel,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AuthComponents.textMuted,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -456,29 +507,6 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _indigoBorder),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.shield_outlined, size: 16, color: _indigo),
-              SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Akses 2 Tingkat: 1. INDOTECH (Master) & 2. LPK (Super Admin)',
-                  style: TextStyle(color: AuthComponents.textMain, fontSize: 11, fontWeight: FontWeight.w700),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-
         AuthComponents.fieldLabel('Username / Email Otoritas'),
         const SizedBox(height: 7),
         AuthComponents.softInput(
@@ -517,13 +545,31 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
         const SizedBox(height: 20),
 
         AuthComponents.gradientButton(
-          label: _loading ? 'Memverifikasi Otoritas...' : 'Masuk Command Center',
-          gradientColors: const [_crimson, _indigo, _indigoBright],
-          shadowColor: _indigo,
+          label: _loading ? 'Memverifikasi Otoritas...' : 'Masuk ke CIJ Master',
           icon: Icons.workspace_premium_rounded,
           onTap: _loading ? null : _handleLogin,
         ),
         const SizedBox(height: 14),
+
+        Center(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _error = null;
+              _resendInfo = null;
+              _lpkSubmitted = false;
+              _mode = _ConsoleAuthMode.registerLpk;
+            }),
+            child: const Text(
+              'Daftar Akun Master',
+              style: TextStyle(
+                color: _indigo,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
 
         Center(
           child: GestureDetector(
@@ -562,41 +608,22 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
 
   Widget _buildRegisterLpkForm() {
     if (_lpkSubmitted) {
-      return Column(
-        children: [
-          const SizedBox(height: 6),
-          Container(
-            width: 66,
-            height: 66,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _gold.withValues(alpha: 0.14),
-              border: Border.all(color: _gold, width: 2),
-            ),
-            child: const Icon(Icons.domain_verification_rounded, color: _gold, size: 34),
-          ),
-          const SizedBox(height: 14),
-          const Text(
-            'Pengajuan LPK Terkirim!',
-            style: TextStyle(color: AuthComponents.textMain, fontSize: 17, fontWeight: FontWeight.w900),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'Cabang $_submittedLpkName telah masuk antrean verifikasi MASTER INDOTECH. Akun Super Admin / LPK akan aktif setelah izin Kemnaker disetujui.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AuthComponents.textMuted, fontSize: 12, height: 1.45),
-          ),
-          const SizedBox(height: 20),
-          AuthComponents.gradientButton(
-            label: 'Kembali ke Masuk Console',
-            gradientColors: const [_crimson, _indigo],
-            shadowColor: _indigo,
-            onTap: () => setState(() {
-              _lpkSubmitted = false;
-              _mode = _ConsoleAuthMode.login;
-            }),
-          ),
-        ],
+      return AuthComponents.emailVerificationView(
+        email: _pendingEmail ?? _idCtrl.text.trim(),
+        accentColor: _indigo,
+        title: 'Verifikasi Email & Antrean Master',
+        subtitle:
+            'Pengajuan $_submittedLpkName terkirim! Konfirmasi email resmi LPK Anda sekarang, lalu tunggu persetujuan izin Kemnaker oleh MASTER INDOTECH.',
+        resending: _resending,
+        resendInfo: _resendInfo,
+        onResend: _handleResendVerification,
+        onBackToLogin: () => setState(() {
+          _lpkSubmitted = false;
+          _error = null;
+          _resendInfo = null;
+          _passCtrl.clear();
+          _mode = _ConsoleAuthMode.login;
+        }),
       );
     }
 
@@ -705,10 +732,31 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
 
         AuthComponents.gradientButton(
           label: _loading ? 'Mengirim Pengajuan...' : 'Ajukan Pendaftaran LPK Baru',
-          gradientColors: const [_crimson, _indigo, _indigoBright],
-          shadowColor: _indigo,
           icon: Icons.domain_add_rounded,
           onTap: _loading ? null : _handleRegisterLpk,
+        ),
+        const SizedBox(height: 14),
+        Center(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _error = null;
+              _resendInfo = null;
+              _lpkSubmitted = false;
+              _mode = _ConsoleAuthMode.login;
+            }),
+            child: RichText(
+              text: const TextSpan(
+                text: 'Sudah punya akun? ',
+                style: TextStyle(color: AuthComponents.textMuted, fontSize: 12),
+                children: [
+                  TextSpan(
+                    text: 'Masuk ke CIJ Master',
+                    style: TextStyle(color: _indigo, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );

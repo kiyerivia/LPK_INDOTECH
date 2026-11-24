@@ -24,7 +24,19 @@ class AdminSiswaScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          ...appState.graduations.map((g) => GlassCard(
+          if (appState.graduations.isEmpty)
+            const GlassCard(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                child: Text(
+                  'Belum ada data kelulusan atau pengajuan E-Sertifikat siswa.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ),
+            )
+          else
+            ...appState.graduations.map((g) => GlassCard(
                 highlight: !g.approved,
                 highlightColor: AppColors.amber,
                 margin: const EdgeInsets.only(bottom: 12),

@@ -102,7 +102,19 @@ class SiswaScheduleScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Text('Riwayat Pertemuan', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          ...pastOrders.map((order) => GlassCard(
+          if (pastOrders.isEmpty)
+            const GlassCard(
+              padding: EdgeInsets.all(18),
+              child: Center(
+                child: Text(
+                  'Belum ada riwayat pertemuan. Riwayat akan tercatat otomatis setelah sesi selesai.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ),
+            )
+          else
+            ...pastOrders.map((order) => GlassCard(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
                 child: Row(

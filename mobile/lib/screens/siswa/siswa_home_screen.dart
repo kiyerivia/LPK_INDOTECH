@@ -108,7 +108,7 @@ class SiswaHomeScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Halo, ${appState.userName.split(' ').first}!',
+                  'Halo, ${appState.userName.trim().isNotEmpty ? appState.userName.trim().split(' ').first : 'Siswa'}!',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 13, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
@@ -157,132 +157,156 @@ class SiswaHomeScreen extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
-                _flowChip('1. Lokasi', 'Radius 3-10km', Icons.radar_rounded, true, onOpenSearch),
-                _flowChip('2. Booking', 'Pilih Jadwal', Icons.calendar_today_rounded, true, onOpenSchedule),
-                _flowChip('3. Latihan', '$completedModules/5 Modul', Icons.directions_car_rounded, true, onOpenSchedule),
-                _flowChip('4. Ujian & Sertifikat', 'Nilai ${appState.studentAvgScore.toStringAsFixed(0)}', Icons.workspace_premium_rounded, appState.studentCertApproved, onOpenReport),
+                _flowChip('1. Lokasi', 'Radius 3-10km', Icons.radar_rounded, false, onOpenSearch),
+                _flowChip('2. Booking', '${appState.orders.length} Order', Icons.calendar_today_rounded, appState.orders.isNotEmpty, onOpenSchedule),
+                _flowChip('3. Latihan', '$completedModules/5 Modul', Icons.directions_car_rounded, completedModules > 0, onOpenSchedule),
+                _flowChip('4. Ujian & Sertifikat', completedModules > 0 ? 'Nilai ${appState.studentAvgScore.toStringAsFixed(0)}' : 'Belum ada nilai', Icons.workspace_premium_rounded, appState.studentCertApproved, onOpenReport),
                 _flowChip('5. Proses SIM A', 'Satpas Banyumas', Icons.badge_rounded, false, onOpenReport),
               ],
             ),
           ),
 
-          // 5 Instruktur Terdekat
+          // Instruktur Terdekat Aktif
           SectionHeader(
-            title: '5 Instruktur Terdekat Aktif',
+            title: 'Instruktur Terdekat Aktif',
             actionLabel: 'Buka Radar',
             onAction: onOpenSearch,
           ),
-          SizedBox(
-            height: 205,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
+          if (activeDrivers.isEmpty)
+            Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: activeDrivers.take(5).length,
-              itemBuilder: (_, idx) {
-                final inst = activeDrivers[idx];
-                return GestureDetector(
-                  onTap: () => onBook(inst),
-                  child: Container(
-                    width: 222,
-                    margin: const EdgeInsets.only(right: 12, top: 2, bottom: 6),
-                    padding: const EdgeInsets.all(14),
-                    decoration: AppTheme.glassCard(radius: 20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            AvatarInitial(initial: inst.initial, size: 40, online: inst.isOnline),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    inst.name,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary, fontSize: 13),
-                                  ),
-                                  Row(
-                                    children: [
-                                      const Icon(Icons.star_rounded, color: AppColors.amber, size: 13),
-                                      const SizedBox(width: 2),
-                                      Expanded(
-                                        child: Text(
-                                          '${inst.rating} (${inst.reviews})',
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          inst.originDriver,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${inst.carModel} (${inst.plateNumber})',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-                        ),
-                        const Spacer(),
-                        Row(
-                          children: [
-                            const Icon(Icons.near_me_rounded, color: AppColors.emerald, size: 13),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                '${inst.distanceKm} km • ${inst.etaMinutes} mnt',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: AppColors.emerald, fontSize: 11, fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 12),
-                            const SizedBox(width: 4),
-                            const Expanded(
-                              child: Text(
-                                'Rem Ganda LPK',
-                                style: TextStyle(color: AppColors.textMuted, fontSize: 10),
-                              ),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Booking',
-                                style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w800),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+              child: GlassCard(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  children: [
+                    const Icon(Icons.radar_rounded, color: AppColors.primary, size: 36),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Belum Ada Mitra Instruktur Aktif',
+                      style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 14),
                     ),
-                  ),
-                );
-              },
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Mitra driver yang sudah lulus KYC & uji rem ganda dari Admin LPK akan otomatis muncul di sini.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 11.5, height: 1.4),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 205,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: activeDrivers.take(5).length,
+                itemBuilder: (_, idx) {
+                  final inst = activeDrivers[idx];
+                  return GestureDetector(
+                    onTap: () => onBook(inst),
+                    child: Container(
+                      width: 222,
+                      margin: const EdgeInsets.only(right: 12, top: 2, bottom: 6),
+                      padding: const EdgeInsets.all(14),
+                      decoration: AppTheme.glassCard(radius: 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              AvatarInitial(initial: inst.initial, size: 40, online: inst.isOnline),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      inst.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary, fontSize: 13),
+                                    ),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.star_rounded, color: AppColors.amber, size: 13),
+                                        const SizedBox(width: 2),
+                                        Expanded(
+                                          child: Text(
+                                            '${inst.rating} (${inst.reviews})',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            inst.originDriver,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            '${inst.carModel} (${inst.plateNumber})',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                          ),
+                          const Spacer(),
+                          Row(
+                            children: [
+                              const Icon(Icons.near_me_rounded, color: AppColors.emerald, size: 13),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '${inst.distanceKm} km • ${inst.etaMinutes} mnt',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(color: AppColors.emerald, fontSize: 11, fontWeight: FontWeight.w700),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          Row(
+                            children: [
+                              const Icon(Icons.verified_user_rounded, color: AppColors.emerald, size: 12),
+                              const SizedBox(width: 4),
+                              const Expanded(
+                                child: Text(
+                                  'Rem Ganda LPK',
+                                  style: TextStyle(color: AppColors.textMuted, fontSize: 10),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text(
+                                  'Booking',
+                                  style: TextStyle(color: AppColors.primary, fontSize: 10, fontWeight: FontWeight.w800),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
             ),
-          ),
 
           // Paket Pelatihan
           const SectionHeader(title: 'Paket Kursus & Pendampingan SIM'),
@@ -294,7 +318,18 @@ class SiswaHomeScreen extends StatelessWidget {
                   highlight: pkg.isPopular,
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(15),
-                  onTap: () => onBook(activeDrivers.first, pkg),
+                  onTap: () {
+                    if (activeDrivers.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Belum ada mitra instruktur aktif untuk paket ini. Cek Radar GPS secara berkala.'),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      );
+                      return;
+                    }
+                    onBook(activeDrivers.first, pkg);
+                  },
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

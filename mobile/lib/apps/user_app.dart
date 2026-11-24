@@ -247,7 +247,7 @@ class _UserAppShellState extends State<UserAppShell> {
                   const Icon(Icons.school_rounded, size: 14, color: AppColors.primary),
                   const SizedBox(width: 5),
                   Text(
-                    _appState.userName.split(' ').first,
+                    _appState.userName.trim().isNotEmpty ? _appState.userName.trim().split(' ').first : 'Siswa',
                     style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800),
                   ),
                   const SizedBox(width: 6),

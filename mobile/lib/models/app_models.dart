@@ -341,134 +341,37 @@ class ServiceAreaConfig {
   }
 }
 
-/// Shared AppState connecting Siswa ↔ Mitra Driver ↔ Admin LPK in real-time
+/// Shared AppState connecting Siswa ↔ Mitra Driver ↔ Admin LPK in real-time (Clean Beta State)
 class AppState extends ChangeNotifier {
   UserRole currentRole = UserRole.siswa;
   bool isLoggedIn = false;
   bool isSuperAdmin = false;
   bool isMaster = false;
   String currentUsername = '';
-  String userName = 'Dimas Aditya';
-  String userEmail = 'siswa@lpk-cij.id';
+  String userName = '';
+  String userEmail = '';
+  String userPhone = '';
   String studentLocation = 'Purwokerto Utara';
+  String studentAddress = '';
+  String studentTransmission = 'Manual (MT)';
 
   // Smart Revenue Split (configurable by Admin LPK)
   int mitraSplitPercent = 60;
   int lpkSplitPercent = 27;
   int platformSplitPercent = 13;
 
-  // Mitra Online Driver State
-  bool mitraIsOnline = true;
-  double mitraServiceRadius = 7.0;
-  List<String> mitraServiceAreas = ['Purwokerto Utara', 'Purwokerto Timur', 'Baturraden'];
-  int mitraWalletBalance = 2850000;
-  int mitraMonthlySessions = 19;
+  // Mitra Online Driver State (starts fresh for beta testing)
+  bool mitraIsOnline = false;
+  double mitraServiceRadius = 5.0;
+  List<String> mitraServiceAreas = ['Purwokerto Utara'];
+  String mitraCarInfo = 'Belum ada armada terdaftar';
+  int mitraWalletBalance = 0;
+  int mitraMonthlySessions = 0;
 
-  // Instructors (5 nearest drivers in Purwokerto ecosystem)
-  final List<Instructor> instructors = [
-    const Instructor(
-      id: 'INS-01',
-      name: 'Bambang Sugiantoro',
-      initial: 'BS',
-      originDriver: 'Mitra Eks GoCar • 8 thn',
-      carModel: 'Toyota Avanza 1.3 G',
-      plateNumber: 'R 1842 BS',
-      rating: 4.9,
-      reviews: 142,
-      distanceKm: 1.2,
-      etaMinutes: 4,
-      transmissions: ['Manual', 'Matic'],
-      experienceYears: 8,
-      sessionsCompleted: 342,
-      area: 'Purwokerto Utara',
-      isOnline: true,
-      dualBrakeVerified: true,
-      mapX: 0.34,
-      mapY: 0.30,
-    ),
-    const Instructor(
-      id: 'INS-02',
-      name: 'Dewi Anggraeni, S.Pd',
-      initial: 'DA',
-      originDriver: 'Mitra GrabCar Wanita • 5 thn',
-      carModel: 'Honda Brio RS CVT',
-      plateNumber: 'R 1290 DA',
-      rating: 4.9,
-      reviews: 98,
-      distanceKm: 2.1,
-      etaMinutes: 7,
-      transmissions: ['Matic'],
-      experienceYears: 5,
-      sessionsCompleted: 215,
-      area: 'Purwokerto Utara',
-      isOnline: true,
-      dualBrakeVerified: true,
-      mapX: 0.68,
-      mapY: 0.28,
-    ),
-    const Instructor(
-      id: 'INS-03',
-      name: 'Hendra Wijaya',
-      initial: 'HW',
-      originDriver: 'Mitra Maxim Car • 9 thn',
-      carModel: 'Daihatsu Sigra R MT',
-      plateNumber: 'R 1511 HW',
-      rating: 4.8,
-      reviews: 128,
-      distanceKm: 2.8,
-      etaMinutes: 9,
-      transmissions: ['Manual'],
-      experienceYears: 9,
-      sessionsCompleted: 410,
-      area: 'Purwokerto Timur',
-      isOnline: true,
-      dualBrakeVerified: true,
-      mapX: 0.74,
-      mapY: 0.62,
-    ),
-    const Instructor(
-      id: 'INS-04',
-      name: 'Ridwan Fauzi',
-      initial: 'RF',
-      originDriver: 'Mitra GoCar • 6 thn',
-      carModel: 'Toyota Calya G AT',
-      plateNumber: 'R 1774 RF',
-      rating: 4.7,
-      reviews: 76,
-      distanceKm: 4.3,
-      etaMinutes: 13,
-      transmissions: ['Manual', 'Matic'],
-      experienceYears: 6,
-      sessionsCompleted: 185,
-      area: 'Purwokerto Selatan',
-      isOnline: true,
-      dualBrakeVerified: true,
-      mapX: 0.26,
-      mapY: 0.70,
-    ),
-    const Instructor(
-      id: 'INS-05',
-      name: 'Agus Prasetyo',
-      initial: 'AP',
-      originDriver: 'Mitra Driver Online • 10 thn',
-      carModel: 'Suzuki Ertiga GX MT',
-      plateNumber: 'R 1903 AP',
-      rating: 4.8,
-      reviews: 110,
-      distanceKm: 6.4,
-      etaMinutes: 18,
-      transmissions: ['Manual'],
-      experienceYears: 10,
-      sessionsCompleted: 480,
-      area: 'Sokaraja',
-      isOnline: true,
-      dualBrakeVerified: true,
-      mapX: 0.82,
-      mapY: 0.78,
-    ),
-  ];
+  // Instructors (populated dynamically when Mitra KYC is approved by Admin LPK)
+  final List<Instructor> instructors = [];
 
-  // Packages
+  // Official Packages Catalog
   final List<DrivingPackage> packages = [
     const DrivingPackage(
       id: 'PKG-1',
@@ -513,92 +416,28 @@ class AppState extends ChangeNotifier {
     ),
   ];
 
-  // Orders / Bookings (shared between Siswa and Mitra!)
-  final List<BookingOrder> orders = [
-    BookingOrder(
-      id: 'ORD-9821',
-      studentName: 'Sarah Amelia (Unsoed)',
-      studentPhone: '0857-1234-5678',
-      pickupAddress: 'Jl. Kampus Grendeng No. 45, Purwokerto Utara',
-      distanceKm: 1.8,
-      instructorId: 'INS-01',
-      instructorName: 'Bambang Sugiantoro',
-      carInfo: 'Toyota Avanza • R 1842 BS',
-      transmission: 'Manual',
-      packageName: 'Paket Standar SIM A',
-      date: DateTime.now().add(const Duration(days: 1)),
-      timeSlot: '09:00 - 11:00 WIB',
-      totalPrice: 1500000,
-      mitraEarning: 90000,
-      sessionIndex: 1,
-      totalSessions: 10,
-      stage: TripStage.pending,
-    ),
-    BookingOrder(
-      id: 'ORD-9815',
-      studentName: 'Dimas Aditya',
-      studentPhone: '0812-3456-7890',
-      pickupAddress: 'Perum Griya Satria, Purwokerto Utara',
-      distanceKm: 1.2,
-      instructorId: 'INS-01',
-      instructorName: 'Bambang Sugiantoro',
-      carInfo: 'Toyota Avanza • R 1842 BS',
-      transmission: 'Manual',
-      packageName: 'Paket Standar SIM A',
-      date: DateTime.now().add(const Duration(hours: 3)),
-      timeSlot: '14:00 - 16:00 WIB',
-      totalPrice: 1500000,
-      mitraEarning: 90000,
-      sessionIndex: 4,
-      totalSessions: 10,
-      stage: TripStage.accepted,
-    ),
-    BookingOrder(
-      id: 'ORD-9799',
-      studentName: 'Dimas Aditya',
-      studentPhone: '0812-3456-7890',
-      pickupAddress: 'Perum Griya Satria, Purwokerto Utara',
-      distanceKm: 1.2,
-      instructorId: 'INS-01',
-      instructorName: 'Bambang Sugiantoro',
-      carInfo: 'Toyota Avanza • R 1842 BS',
-      transmission: 'Manual',
-      packageName: 'Paket Standar SIM A',
-      date: DateTime.now().subtract(const Duration(days: 2)),
-      timeSlot: '09:00 - 11:00 WIB',
-      totalPrice: 1500000,
-      mitraEarning: 90000,
-      sessionIndex: 3,
-      totalSessions: 10,
-      stage: TripStage.completed,
-    ),
-  ];
+  // Orders / Bookings (clean empty state for new beta accounts)
+  final List<BookingOrder> orders = [];
 
-  // Curriculum Modules for Siswa
+  // Official 5-Module Curriculum (starts completely clean/unscored for every new student)
   final List<CurriculumModule> modules = [
     const CurriculumModule(
       id: 'MOD-1',
       title: 'Modul 1: Pengenalan & Ergonomi',
       subtitle: 'Panel instrumen, spion, posisi duduk & safety check',
-      completed: true,
-      score: 92,
-      instructorNotes: 'Sangat cepat memahami fungsi pedal dan pengaturan spion.',
+      completed: false,
     ),
     const CurriculumModule(
       id: 'MOD-2',
       title: 'Modul 2: Dasar Setir & Pindah Gigi',
       subtitle: 'Koordinasi kopling-gas, belok halus & pengereman bertahap',
-      completed: true,
-      score: 88,
-      instructorNotes: 'Transisi gigi 1 ke 2 sudah halus, perhatikan RPM.',
+      completed: false,
     ),
     const CurriculumModule(
       id: 'MOD-3',
       title: 'Modul 3: Stop & Go Tanjakan',
-      subtitle: 'Teknik rem tangan & setengah kopling di tanjakan Baturraden',
-      completed: true,
-      score: 90,
-      instructorNotes: 'Tidak mundur saat tanjakan, mantap dan tenang.',
+      subtitle: 'Teknik rem tangan & setengah kopling di tanjakan',
+      completed: false,
     ),
     const CurriculumModule(
       id: 'MOD-4',
@@ -614,91 +453,26 @@ class AppState extends ChangeNotifier {
     ),
   ];
 
-  // Pending Mitra KYC for Admin
-  final List<PendingMitra> pendingMitras = [
-    const PendingMitra(
-      id: 'MIT-008',
-      name: 'Rudi Hartono',
-      phone: '0813-8822-1100',
-      driverBackground: 'Eks Driver Maxim & GoCar (6 thn)',
-      simType: 'SIM A Umum & SIM B1',
-      carInfo: 'Toyota Calya G 2022 • R 4019 TR',
-      area: 'Purwokerto Barat',
-      status: 'pending',
-    ),
-    const PendingMitra(
-      id: 'MIT-009',
-      name: 'Fajar Nugroho',
-      phone: '0856-4411-9022',
-      driverBackground: 'Driver GrabCar Aktif (4 thn)',
-      simType: 'SIM A Aktif s/d 2029',
-      carInfo: 'Honda Mobilio E CVT • R 1622 FN',
-      area: 'Sokaraja',
-      status: 'pending',
-    ),
-  ];
+  // Pending Mitra KYC for Admin (clean empty state)
+  final List<PendingMitra> pendingMitras = [];
 
-  // Graduations & Certificates for Admin & Siswa
-  final List<GraduationRecord> graduations = [
-    const GraduationRecord(
-      id: 'GRD-102',
-      studentName: 'Dimas Aditya',
-      instructorName: 'Bambang Sugiantoro',
-      avgScore: 90.0,
-      simStep: 'Siap Tes Satpas Polresta Banyumas',
-      certNumber: 'LPK-IND/2026/SIM-A/0102',
-      approved: true,
-    ),
-    const GraduationRecord(
-      id: 'GRD-103',
-      studentName: 'Nadia Safitri',
-      instructorName: 'Dewi Anggraeni, S.Pd',
-      avgScore: 95.0,
-      simStep: 'Menunggu Otorisasi Sertifikat',
-      certNumber: 'LPK-IND/2026/SIM-A/0103',
-      approved: false,
-    ),
-  ];
+  // Graduations & Certificates for Admin & Siswa (clean empty state)
+  final List<GraduationRecord> graduations = [];
 
-  // Mitra Wallet History
-  final List<WalletTransaction> walletTransactions = [
-    const WalletTransaction(
-      id: 'TRX-01',
-      title: 'Insentif Sesi #3 — Dimas Aditya',
-      subtitle: 'Smart Split 60% • Paket Standar',
-      amount: 90000,
-      isCredit: true,
-      dateLabel: 'Kemarin, 11:05',
-    ),
-    const WalletTransaction(
-      id: 'TRX-02',
-      title: 'Insentif Sesi #8 — Raka Pratama',
-      subtitle: 'Smart Split 60% • Paket Standar',
-      amount: 90000,
-      isCredit: true,
-      dateLabel: '16 Nov, 16:10',
-    ),
-    const WalletTransaction(
-      id: 'TRX-03',
-      title: 'Penarikan ke BCA ****4821',
-      subtitle: 'Pencairan Saldo Mitra',
-      amount: 500000,
-      isCredit: false,
-      dateLabel: '14 Nov, 09:30',
-    ),
-  ];
+  // Mitra Wallet History (clean empty state)
+  final List<WalletTransaction> walletTransactions = [];
 
-  // Admin Service Areas
+  // Admin Service Areas (master zone config, 0 dummy drivers)
   final List<ServiceAreaConfig> serviceAreas = [
-    const ServiceAreaConfig(name: 'Purwokerto Utara', activeDrivers: 9, active: true),
-    const ServiceAreaConfig(name: 'Purwokerto Timur', activeDrivers: 7, active: true),
-    const ServiceAreaConfig(name: 'Purwokerto Selatan', activeDrivers: 6, active: true),
-    const ServiceAreaConfig(name: 'Purwokerto Barat', activeDrivers: 4, active: true),
-    const ServiceAreaConfig(name: 'Sokaraja', activeDrivers: 3, active: true),
-    const ServiceAreaConfig(name: 'Baturraden', activeDrivers: 2, active: true),
+    const ServiceAreaConfig(name: 'Purwokerto Utara', activeDrivers: 0, active: true),
+    const ServiceAreaConfig(name: 'Purwokerto Timur', activeDrivers: 0, active: true),
+    const ServiceAreaConfig(name: 'Purwokerto Selatan', activeDrivers: 0, active: true),
+    const ServiceAreaConfig(name: 'Purwokerto Barat', activeDrivers: 0, active: true),
+    const ServiceAreaConfig(name: 'Sokaraja', activeDrivers: 0, active: true),
+    const ServiceAreaConfig(name: 'Baturraden', activeDrivers: 0, active: true),
   ];
 
-  // Multi-LPK Registry (Verified & Governed by INDOTECH Master)
+  // Multi-LPK Registry (official HQ only, clean 0 metrics for beta)
   final List<LpkBranch> lpkBranches = [
     const LpkBranch(
       id: 'LPK-001',
@@ -707,45 +481,9 @@ class AppState extends ChangeNotifier {
       licenseNumber: 'KEMNAKER/563/LPK-CIJ/2025',
       ownerName: 'Super Admin / LPK CIJ',
       ownerPhone: '0811-2600-0001',
-      activeDrivers: 28,
-      activeStudents: 64,
-      monthlyOmzet: 48600000,
-      status: 'verified',
-    ),
-    const LpkBranch(
-      id: 'LPK-002',
-      name: 'LPK Satria Muda Mengemudi',
-      city: 'Cilacap Kota',
-      licenseNumber: 'KEMNAKER/214/LPK-CLP/2026',
-      ownerName: 'H. Sudirman',
-      ownerPhone: '0813-2811-4400',
-      activeDrivers: 12,
-      activeStudents: 29,
-      monthlyOmzet: 21500000,
-      status: 'pending',
-    ),
-    const LpkBranch(
-      id: 'LPK-003',
-      name: 'LPK Prima Drive Purbalingga',
-      city: 'Purbalingga',
-      licenseNumber: 'KEMNAKER/118/LPK-PBG/2026',
-      ownerName: 'Ibu Ratna Dewi',
-      ownerPhone: '0856-9012-3311',
-      activeDrivers: 8,
-      activeStudents: 18,
-      monthlyOmzet: 14200000,
-      status: 'pending',
-    ),
-    const LpkBranch(
-      id: 'LPK-004',
-      name: 'LPK Mandala Kebumen',
-      city: 'Kebumen',
-      licenseNumber: 'KEMNAKER/092/LPK-KBM/2025',
-      ownerName: 'Bapak Arifin',
-      ownerPhone: '0812-7741-9900',
-      activeDrivers: 15,
-      activeStudents: 38,
-      monthlyOmzet: 28900000,
+      activeDrivers: 0,
+      activeStudents: 0,
+      monthlyOmzet: 0,
       status: 'verified',
     ),
   ];
@@ -762,6 +500,7 @@ class AppState extends ChangeNotifier {
     required String email,
     required UserRole role,
     String username = '',
+    String phone = '',
     bool superAdmin = false,
     bool master = false,
   }) {
@@ -771,7 +510,23 @@ class AppState extends ChangeNotifier {
     currentUsername = username.isNotEmpty ? username : email.split('@').first;
     userName = name;
     userEmail = email;
+    if (phone.isNotEmpty) userPhone = phone;
     currentRole = role;
+    notifyListeners();
+  }
+
+  void updateStudentProfile({
+    required String fullName,
+    required String phone,
+    required String location,
+    required String address,
+    required String transmission,
+  }) {
+    if (fullName.trim().isNotEmpty) userName = fullName.trim();
+    userPhone = phone.trim();
+    studentLocation = location;
+    studentAddress = address.trim();
+    studentTransmission = transmission;
     notifyListeners();
   }
 
@@ -780,7 +535,10 @@ class AppState extends ChangeNotifier {
     isSuperAdmin = false;
     isMaster = false;
     currentUsername = '';
-    userName = 'Dimas Aditya';
+    userName = '';
+    userEmail = '';
+    userPhone = '';
+    studentAddress = '';
     currentRole = UserRole.siswa;
     notifyListeners();
   }
@@ -1010,13 +768,21 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  int get totalBranchOmzet =>
+      orders.where((o) => o.stage != TripStage.rejected).fold<int>(0, (sum, o) => sum + o.totalPrice);
+
+  int get activeStudentCount => orders.map((o) => o.studentName).toSet().length;
+
   int get totalNationalOmzet =>
+      totalBranchOmzet +
       lpkBranches.where((b) => b.status == 'verified').fold<int>(0, (sum, b) => sum + b.monthlyOmzet);
 
   int get totalNationalDrivers =>
+      instructors.length +
       lpkBranches.where((b) => b.status == 'verified').fold<int>(0, (sum, b) => sum + b.activeDrivers);
 
   int get totalNationalStudents =>
+      activeStudentCount +
       lpkBranches.where((b) => b.status == 'verified').fold<int>(0, (sum, b) => sum + b.activeStudents);
 
   double get studentAvgScore {

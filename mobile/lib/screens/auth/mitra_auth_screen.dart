@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../config/app_version.dart';
 import '../../models/app_models.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
 import '../../theme/app_theme.dart';
 import 'auth_components.dart';
 
-enum _MitraAuthMode { login, register, forgot }
+enum _MitraAuthMode { login, register, verifyEmail, forgot }
 
 /// Dedicated Login & Register Dashboard for App 2: CIJ Partner (`cij-partner.vercel.app`)
 /// Visual Identity: Bright GoPartner Emerald–Teal–Gold Soft-UI tailored for Mitra Driver / Instruktur.
@@ -27,9 +28,13 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
   _MitraAuthMode _mode = _MitraAuthMode.login;
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _resending = false;
   bool _resetSent = false;
   bool _dualBrakeConfirmed = true;
+  int _failedAttempts = 0;
   String? _error;
+  String? _resendInfo;
+  String? _pendingEmail;
   String _selectedTransmission = 'Manual & Matic';
   String _selectedArea = 'Purwokerto Utara';
   BiometricBinding? _enrolledBiometric;
@@ -87,6 +92,7 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
       _error = null;
     });
 
+    final attemptedId = _idCtrl.text.trim();
     final result = await AuthService.signIn(
       identifier: _idCtrl.text,
       password: _passCtrl.text,
@@ -95,18 +101,38 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
     if (!mounted) return;
 
     if (!result.success || result.account == null) {
+      _idCtrl.clear();
+      _passCtrl.clear();
       setState(() {
         _loading = false;
-        _error = result.message;
+        _resendInfo = null;
+        if (result.requiresEmailVerification && result.pendingEmail != null) {
+          _pendingEmail = result.pendingEmail;
+          _error = result.message;
+        } else {
+          _failedAttempts += 1;
+          if (_failedAttempts >= 5) {
+            _failedAttempts = 0;
+            _resetSent = false;
+            if (attemptedId.isNotEmpty) _resetCtrl.text = attemptedId;
+            _mode = _MitraAuthMode.forgot;
+            _error = 'Anda sudah 5x salah memasukkan akun/kata sandi. Silakan pulihkan kata sandi Mitra Anda.';
+          } else {
+            _error = '${result.message} (Percobaan $_failedAttempts/5)';
+          }
+        }
       });
       return;
     }
+
+    _failedAttempts = 0;
 
     final acc = result.account!;
     widget.appState.login(
       name: acc.fullName,
       email: acc.email,
       username: acc.username,
+      phone: acc.phone,
       role: acc.role,
     );
     setState(() => _loading = false);
@@ -162,6 +188,7 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _resendInfo = null;
     });
 
     final result = await AuthService.register(
@@ -170,11 +197,18 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
       email: _idCtrl.text,
       password: _passCtrl.text,
       role: UserRole.mitra,
+      flavor: AppFlavor.mitra,
+      extraMetadata: {
+        'car_info': '${_carCtrl.text.trim()} ($_selectedTransmission)',
+        'sim_type': _simCtrl.text.trim().isEmpty ? 'SIM A Aktif' : _simCtrl.text.trim(),
+        'area': _selectedArea,
+        'dual_brake': true,
+      },
       allowAdminCreation: false,
     );
     if (!mounted) return;
 
-    if (!result.success || result.account == null) {
+    if (!result.success) {
       setState(() {
         _loading = false;
         _error = result.message;
@@ -182,22 +216,53 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
       return;
     }
 
-    final acc = result.account!;
     widget.appState.registerNewMitraApplication(
-      name: acc.fullName,
-      phone: acc.phone,
+      name: _nameCtrl.text.trim(),
+      phone: _phoneCtrl.text.trim().isEmpty ? '-' : _phoneCtrl.text.trim(),
       carInfo: '${_carCtrl.text.trim()} ($_selectedTransmission)',
       simType: _simCtrl.text.trim().isEmpty ? 'SIM A Aktif' : _simCtrl.text.trim(),
       area: _selectedArea,
     );
-    widget.appState.login(
-      name: acc.fullName,
-      email: acc.email,
-      username: acc.username,
-      role: UserRole.mitra,
-    );
-    setState(() => _loading = false);
-    widget.onAuthenticated();
+
+    if (result.requiresEmailVerification) {
+      setState(() {
+        _loading = false;
+        _pendingEmail = result.pendingEmail ?? _idCtrl.text.trim().toLowerCase();
+        _mode = _MitraAuthMode.verifyEmail;
+      });
+      return;
+    }
+
+    if (result.account != null) {
+      final acc = result.account!;
+      widget.appState.login(
+        name: acc.fullName,
+        email: acc.email,
+        username: acc.username,
+        role: UserRole.mitra,
+      );
+      setState(() => _loading = false);
+      widget.onAuthenticated();
+    }
+  }
+
+  Future<void> _handleResendVerification() async {
+    final email = _pendingEmail ?? _idCtrl.text.trim().toLowerCase();
+    setState(() {
+      _resending = true;
+      _error = null;
+      _resendInfo = null;
+    });
+    final res = await AuthService.resendVerificationEmail(email: email, flavor: AppFlavor.mitra);
+    if (!mounted) return;
+    setState(() {
+      _resending = false;
+      if (res.success) {
+        _resendInfo = res.message;
+      } else {
+        _error = res.message;
+      }
+    });
   }
 
   Future<void> _handleForgot() async {
@@ -298,75 +363,42 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
                             ),
                           ),
                           AuthComponents.logoBanner(width: 210, height: 126, fallbackColor: _emerald),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: _emerald.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _emerald.withValues(alpha: 0.45)),
-                            ),
-                            child: const Text(
-                              'CIJ PARTNER • APLIKASI MITRA DRIVER',
+                          const SizedBox(height: 4),
+                          AuthComponents.appTitle('CIJ Mitra'),
+                          if (_mode == _MitraAuthMode.register) ...[
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Pendaftaran Mitra Driver (Smart Split 60% Mitra)',
                               textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _emeraldDeep,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.6,
-                              ),
+                              style: TextStyle(color: AuthComponents.textMuted, fontSize: 11.5, fontWeight: FontWeight.w600),
                             ),
-                          ),
-                          const SizedBox(height: 10),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [_emerald.withValues(alpha: 0.08), _gold.withValues(alpha: 0.12)],
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: _mintBorder),
-                            ),
-                            child: const Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.account_balance_wallet_rounded, size: 15, color: _emeraldDeep),
-                                SizedBox(width: 6),
-                                Flexible(
+                          ],
+                          const SizedBox(height: 18),
+
+                          if (_error != null) ...[
+                            AuthComponents.errorBanner(_error!),
+                            if (_pendingEmail != null && _mode == _MitraAuthMode.login) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: GestureDetector(
+                                  onTap: _resending ? null : _handleResendVerification,
                                   child: Text(
-                                    'Smart Split Transparan: 60% Mitra • 27% LPK • 13% Platform',
+                                    _resending
+                                        ? 'Mengirim ulang tautan verifikasi...'
+                                        : 'Kirim ulang email verifikasi ke $_pendingEmail →',
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: _emeraldDeep,
-                                      fontSize: 10.5,
+                                      fontSize: 11.5,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          if (_mode != _MitraAuthMode.forgot) ...[
-                            AuthComponents.modeSwitcher(
-                              isLogin: _mode == _MitraAuthMode.login,
-                              loginLabel: 'Masuk Mitra',
-                              registerLabel: 'Daftar Mitra Baru',
-                              activeGradient: const [_emeraldDeep, _teal],
-                              activeShadow: _emerald,
-                              trackBg: const Color(0xFFF0FDF4),
-                              trackBorder: _mintBorder,
-                              onSelectLogin: (login) => setState(() {
-                                _error = null;
-                                _mode = login ? _MitraAuthMode.login : _MitraAuthMode.register;
-                              }),
-                            ),
-                            const SizedBox(height: 18),
+                              ),
+                            ],
                           ],
-
-                          if (_error != null) AuthComponents.errorBanner(_error!),
+                          if (_resendInfo != null && _mode == _MitraAuthMode.login)
+                            AuthComponents.infoBanner(_resendInfo!, color: _emeraldDeep),
 
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 240),
@@ -376,7 +408,34 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
                                   ? _buildLoginForm()
                                   : _mode == _MitraAuthMode.register
                                       ? _buildRegisterForm()
-                                      : _buildForgotForm(),
+                                      : _mode == _MitraAuthMode.verifyEmail
+                                          ? AuthComponents.emailVerificationView(
+                                              email: _pendingEmail ?? _idCtrl.text.trim(),
+                                              accentColor: _emeraldDeep,
+                                              title: 'Verifikasi Email Mitra',
+                                              subtitle:
+                                                  'Pengajuan KYC Mitra Driver Anda telah diterima! Konfirmasi alamat email Anda terlebih dahulu sebelum masuk ke CIJ Partner.',
+                                              resending: _resending,
+                                              resendInfo: _resendInfo,
+                                              onResend: _handleResendVerification,
+                                              onBackToLogin: () => setState(() {
+                                                _error = null;
+                                                _resendInfo = null;
+                                                _passCtrl.clear();
+                                                _mode = _MitraAuthMode.login;
+                                              }),
+                                            )
+                                          : _buildForgotForm(),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            AppVersions.partner.fullLabel,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: AuthComponents.textMuted,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -399,18 +458,6 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          alignment: WrapAlignment.center,
-          children: [
-            AuthComponents.featureChip(Icons.local_taxi_rounded, 'Sistem ON BID', _emeraldDeep),
-            AuthComponents.featureChip(Icons.payments_rounded, 'Insentif 60%', _teal),
-            AuthComponents.featureChip(Icons.verified_rounded, 'Standar Rem Ganda', _gold),
-          ],
-        ),
-        const SizedBox(height: 18),
-
         AuthComponents.fieldLabel('ID Mitra, Nomor HP atau Email'),
         const SizedBox(height: 7),
         AuthComponents.softInput(
@@ -449,13 +496,30 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
         const SizedBox(height: 20),
 
         AuthComponents.gradientButton(
-          label: _loading ? 'Memverifikasi...' : 'Masuk & Mulai ON BID',
-          gradientColors: const [_emeraldDeep, _emerald, _teal],
-          shadowColor: _emerald,
+          label: _loading ? 'Memverifikasi...' : 'Masuk ke CIJ Mitra',
           icon: Icons.local_taxi_rounded,
           onTap: _loading ? null : _handleLogin,
         ),
         const SizedBox(height: 14),
+
+        Center(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _error = null;
+              _resendInfo = null;
+              _mode = _MitraAuthMode.register;
+            }),
+            child: const Text(
+              'Daftar Akun Mitra',
+              style: TextStyle(
+                color: _emeraldDeep,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
 
         Center(
           child: GestureDetector(
@@ -570,10 +634,27 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
                 decoration: BoxDecoration(
-                  gradient: active ? const LinearGradient(colors: [_emeraldDeep, _teal]) : null,
+                  gradient: active
+                      ? const LinearGradient(
+                          colors: [AuthComponents.matteTop, AuthComponents.matteBottom],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        )
+                      : null,
                   color: active ? null : const Color(0xFFF7FEFC),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: active ? Colors.transparent : _mintBorder),
+                  border: Border.all(
+                    color: active ? AuthComponents.matteBorder : _mintBorder,
+                  ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.25),
+                            offset: const Offset(0, 4),
+                            blurRadius: 10,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   t,
@@ -667,10 +748,30 @@ class _MitraAuthScreenState extends State<MitraAuthScreen> {
 
         AuthComponents.gradientButton(
           label: _loading ? 'Mendaftarkan Mitra...' : 'Daftar & Ajukan KYC Mitra',
-          gradientColors: const [_emeraldDeep, _emerald, _teal],
-          shadowColor: _emerald,
           icon: Icons.verified_user_rounded,
           onTap: _loading ? null : _handleRegister,
+        ),
+        const SizedBox(height: 14),
+        Center(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _error = null;
+              _resendInfo = null;
+              _mode = _MitraAuthMode.login;
+            }),
+            child: RichText(
+              text: const TextSpan(
+                text: 'Sudah punya akun? ',
+                style: TextStyle(color: AuthComponents.textMuted, fontSize: 12),
+                children: [
+                  TextSpan(
+                    text: 'Masuk ke CIJ Mitra',
+                    style: TextStyle(color: _emeraldDeep, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );

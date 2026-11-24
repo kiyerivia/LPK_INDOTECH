@@ -24,7 +24,19 @@ class AdminMitraScreen extends StatelessWidget {
           ),
           const SizedBox(height: 12),
 
-          ...appState.pendingMitras.map((m) {
+          if (appState.pendingMitras.isEmpty)
+            const GlassCard(
+              padding: EdgeInsets.all(18),
+              child: Center(
+                child: Text(
+                  'Belum ada pengajuan KYC mitra driver baru.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ),
+            )
+          else
+            ...appState.pendingMitras.map((m) {
             final approved = m.status == 'approved';
             return GlassCard(
               highlight: !approved,
@@ -94,7 +106,19 @@ class AdminMitraScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Text('Mitra Driver Aktif (${appState.instructors.length})', style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
-          ...appState.instructors.map((inst) => GlassCard(
+          if (appState.instructors.isEmpty)
+            const GlassCard(
+              padding: EdgeInsets.all(18),
+              child: Center(
+                child: Text(
+                  'Belum ada mitra driver aktif di radar. Setujui pengajuan KYC mitra untuk mengaktifkan.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                ),
+              ),
+            )
+          else
+            ...appState.instructors.map((inst) => GlassCard(
                 margin: const EdgeInsets.only(bottom: 8),
                 padding: const EdgeInsets.all(13),
                 child: Row(

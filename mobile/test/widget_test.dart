@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lpk_indotech/apps/console_app.dart';
 import 'package:lpk_indotech/apps/mitra_app.dart';
 import 'package:lpk_indotech/apps/user_app.dart';
+import 'package:lpk_indotech/config/app_version.dart';
 import 'package:lpk_indotech/main.dart';
 
 void main() {
@@ -11,135 +12,203 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('Default LPKIndotechApp launches App 1 (CIJ Driving / UserAuthScreen) directly', (tester) async {
-    tester.view.physicalSize = const Size(430, 932);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets(
+    'Default LPKIndotechApp launches CIJ Driving with clean title & version badge',
+    (tester) async {
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(const LPKIndotechApp());
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const LPKIndotechApp());
+      await tester.pumpAndSettle();
 
-    expect(find.text('CIJ DRIVING • APLIKASI KONSUMEN / SISWA'), findsOneWidget);
-    expect(find.text('Masuk Siswa'), findsOneWidget);
-    expect(find.text('Daftar Siswa'), findsOneWidget);
-  });
+      expect(find.text('CIJ Driving'), findsOneWidget);
+      expect(find.text('Daftar Akun Driving'), findsOneWidget);
+      expect(find.text(AppVersions.driving.fullLabel), findsOneWidget);
+    },
+  );
 
-  testWidgets('App 1 (UserApp) dedicated Login & Register Siswa dashboard + Siswa-only RBAC', (tester) async {
-    tester.view.physicalSize = const Size(430, 932);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets(
+    'App 1 (CIJ Driving): Email Verification, Clean Beta State & Edit Profil Siswa',
+    (tester) async {
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(const UserApp());
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const UserApp());
+      await tester.pumpAndSettle();
 
-    // Switch to Daftar Siswa tab and verify Siswa-specific fields
-    await tester.tap(find.text('Daftar Siswa'));
-    await tester.pumpAndSettle();
-    expect(find.text('Pilihan Transmisi Belajar'), findsOneWidget);
-    expect(find.text('Area Jemput Latihan'), findsOneWidget);
+      // 1. Tap text link "Daftar Akun Driving" -> Email Verification screen
+      await tester.tap(find.text('Daftar Akun Driving'));
+      await tester.pumpAndSettle();
+      final regFields = find.byType(TextField);
+      await tester.enterText(regFields.at(0), 'Rivia Putri');
+      await tester.enterText(regFields.at(1), '08123456789');
+      await tester.enterText(regFields.at(2), 'rivia@gmail.com');
+      await tester.enterText(regFields.at(3), 'Rivia@2026');
+      await tester.ensureVisible(find.text('Daftar Akun Siswa'));
+      await tester.tap(find.text('Daftar Akun Siswa'));
+      await tester.pumpAndSettle();
+      expect(find.text('Verifikasi Email Siswa'), findsOneWidget);
+      expect(find.text('Kirim Ulang Email Verifikasi'), findsOneWidget);
 
-    // Switch back to Masuk Siswa
-    await tester.tap(find.text('Masuk Siswa'));
-    await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.text('Sudah Verifikasi — Masuk Sekarang'),
+      );
+      await tester.tap(find.text('Sudah Verifikasi — Masuk Sekarang'));
+      await tester.pumpAndSettle();
 
-    // Master account MUST be rejected in UserApp (wrong app!)
-    final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'INDOTECH');
-    await tester.enterText(fields.at(1), 'Indotech@2026');
-    await tester.tap(find.text('Masuk ke CIJ Driving'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Command Center'), findsOneWidget);
+      // 2. Wrong-app RBAC rejects INDOTECH Master in UserApp & auto-clears both inputs
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'INDOTECH');
+      await tester.enterText(fields.at(1), 'Indotech@2026');
+      await tester.tap(find.text('Masuk ke CIJ Driving'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Command Center'), findsOneWidget);
+      expect(tester.widget<TextField>(fields.at(0)).controller?.text, isEmpty);
+      expect(tester.widget<TextField>(fields.at(1)).controller?.text, isEmpty);
 
-    // Valid Siswa logs in cleanly
-    await tester.enterText(fields.at(0), 'siswa');
-    await tester.enterText(fields.at(1), 'Siswa@2026');
-    await tester.tap(find.text('Masuk ke CIJ Driving'));
-    await tester.pumpAndSettle();
-    expect(find.text('Beranda'), findsOneWidget);
-    expect(find.text('Cari'), findsOneWidget);
-  });
+      // 4 more failed attempts (total 5x) -> auto-redirects to Pemulihan Kata Sandi Siswa!
+      for (int i = 0; i < 4; i++) {
+        await tester.enterText(fields.at(0), 'salah@gmail.com');
+        await tester.enterText(fields.at(1), 'wrongpass');
+        await tester.tap(find.text('Masuk ke CIJ Driving'));
+        await tester.pumpAndSettle();
+      }
+      expect(find.text('Pemulihan Kata Sandi Siswa'), findsOneWidget);
+      expect(find.textContaining('5x salah'), findsOneWidget);
 
-  testWidgets('App 2 (MitraApp) dedicated GoPartner Login & Register KYC dashboard + Mitra-only RBAC', (tester) async {
-    tester.view.physicalSize = const Size(430, 932);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+      await tester.tap(find.text('← Kembali ke Masuk Siswa'));
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(const MitraApp());
-    await tester.pumpAndSettle();
+      // 3. Valid Siswa login -> Clean Beta State (0 bookings, 0 completed modules, 0 dummy drivers)
+      final loginFields = find.byType(TextField);
+      await tester.enterText(loginFields.at(0), 'siswa');
+      await tester.enterText(loginFields.at(1), 'Siswa@2026');
+      await tester.tap(find.text('Masuk ke CIJ Driving'));
+      await tester.pumpAndSettle();
+      expect(find.text('Belum Ada Mitra Instruktur Aktif'), findsOneWidget);
 
-    expect(find.text('CIJ PARTNER • APLIKASI MITRA DRIVER'), findsOneWidget);
-    expect(find.textContaining('60% Mitra'), findsOneWidget);
+      // Check Rapor tab starts completely clean
+      await tester.tap(find.text('Rapor'));
+      await tester.pumpAndSettle();
+      expect(find.text('0 dari 5 modul selesai'), findsOneWidget);
+      expect(find.text('BELUM ADA NILAI • MULAI LATIHAN'), findsOneWidget);
 
-    // Switch to Daftar Mitra Baru tab and verify Dual-Brake safety & Vehicle fields
-    await tester.tap(find.text('Daftar Mitra Baru'));
-    await tester.pumpAndSettle();
-    expect(find.text('Armada & Plat Nomor'), findsOneWidget);
-    expect(find.textContaining('Pedal Rem Ganda'), findsOneWidget);
+      // Check Jadwal tab starts completely clean
+      await tester.tap(find.text('Jadwal'));
+      await tester.pumpAndSettle();
+      expect(find.text('Belum Ada Sesi Aktif'), findsOneWidget);
 
-    // Switch back to Masuk Mitra
-    await tester.tap(find.text('Masuk Mitra'));
-    await tester.pumpAndSettle();
+      // 4. Test Edit Profil Siswa on Profil tab
+      await tester.tap(find.text('Profil'));
+      await tester.pumpAndSettle();
+      expect(find.text('Edit Profil Siswa'), findsOneWidget);
+      await tester.tap(find.text('Edit Profil Siswa'));
+      await tester.pumpAndSettle();
 
-    // Siswa account MUST be rejected in MitraApp
-    final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'siswa');
-    await tester.enterText(fields.at(1), 'Siswa@2026');
-    await tester.tap(find.text('Masuk & Mulai ON BID'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Aplikasi Konsumen'), findsOneWidget);
+      final editFields = find.byType(TextField);
+      await tester.enterText(editFields.at(0), 'Rivia Beta');
+      await tester.enterText(editFields.at(1), '0812-9999-8888');
+      await tester.ensureVisible(find.text('Simpan Perubahan Profil'));
+      await tester.tap(find.text('Simpan Perubahan Profil'));
+      await tester.pumpAndSettle();
 
-    // Valid Mitra logs in cleanly
-    await tester.enterText(fields.at(0), 'mitra');
-    await tester.enterText(fields.at(1), 'Mitra@2026');
-    await tester.tap(find.text('Masuk & Mulai ON BID'));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('ON BID'), findsOneWidget);
-  });
+      expect(find.text('Rivia Beta'), findsOneWidget);
+      expect(find.text('0812-9999-8888'), findsOneWidget);
+    },
+  );
 
-  testWidgets('App 3 (ConsoleApp) dedicated Executive Login & Register LPK Baru + Master/LPK separation', (tester) async {
-    // Test responsive Desktop Split Dashboard layout (1280x900)
-    tester.view.physicalSize = const Size(1280, 900);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets(
+    'App 2 (CIJ Mitra): Clean Beta State, KYC Register & Version Badge',
+    (tester) async {
+      tester.view.physicalSize = const Size(430, 932);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(const ConsoleApp());
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(const MitraApp());
+      await tester.pumpAndSettle();
 
-    expect(find.text('INDOTECH MASTER & LPK CONSOLE'), findsOneWidget);
-    expect(find.text('CIJ COMMAND CENTER • HOLDING & LPK'), findsOneWidget);
+      expect(find.text('CIJ Mitra'), findsOneWidget);
+      expect(find.text('Daftar Akun Mitra'), findsOneWidget);
+      expect(find.text(AppVersions.partner.fullLabel), findsOneWidget);
 
-    // Switch to Daftar LPK Baru and verify Kemnaker license + Master verification notice
-    await tester.tap(find.text('Daftar LPK Baru'));
-    await tester.pumpAndSettle();
-    expect(find.text('Nomor Izin LPK Kemnaker / NIB'), findsOneWidget);
-    expect(find.textContaining('MASTER INDOTECH'), findsWidgets);
+      await tester.tap(find.text('Daftar Akun Mitra'));
+      await tester.pumpAndSettle();
+      expect(find.text('Armada & Plat Nomor'), findsOneWidget);
+      expect(find.textContaining('Pedal Rem Ganda'), findsOneWidget);
 
-    // Switch back to Masuk Console
-    await tester.tap(find.text('Masuk Console'));
-    await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.textContaining('Masuk ke CIJ Mitra', findRichText: true),
+      );
+      await tester.tap(
+        find.textContaining('Masuk ke CIJ Mitra', findRichText: true),
+      );
+      await tester.pumpAndSettle();
 
-    // 1. Login as INDOTECH Master -> gets National Overview + Verif LPK tab!
-    final fields = find.byType(TextField);
-    await tester.enterText(fields.at(0), 'INDOTECH');
-    await tester.enterText(fields.at(1), 'Indotech@2026');
-    await tester.tap(find.text('Masuk Command Center'));
-    await tester.pumpAndSettle();
-    expect(find.text('MASTER INDOTECH HQ'), findsOneWidget);
-    expect(find.text('Verif LPK'), findsOneWidget);
+      // Reject Siswa on MitraApp
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'siswa');
+      await tester.enterText(fields.at(1), 'Siswa@2026');
+      await tester.tap(find.text('Masuk ke CIJ Mitra'));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Aplikasi Konsumen'), findsOneWidget);
 
-    await tester.tap(find.text('Verif LPK'));
-    await tester.pumpAndSettle();
-    expect(find.text('Verifikasi LPK (Otoritas Master)'), findsOneWidget);
+      // Valid Mitra login -> Clean Beta State (OFFLINE, Rp 0 saldo, 0 orders)
+      await tester.enterText(fields.at(0), 'mitra');
+      await tester.enterText(fields.at(1), 'Mitra@2026');
+      await tester.tap(find.text('Masuk ke CIJ Mitra'));
+      await tester.pumpAndSettle();
+      expect(find.text('OFFLINE • ISTIRAHAT'), findsOneWidget);
+      expect(find.text('Rp 0'), findsOneWidget);
+    },
+  );
 
-    // 2. Logout & login as LPK Super Admin -> gets LPK Operations ONLY (no Verif LPK Master tab!)
-    await tester.tap(find.byIcon(Icons.logout_rounded));
-    await tester.pumpAndSettle();
-    final fields2 = find.byType(TextField);
-    await tester.enterText(fields2.at(0), 'superadmin');
-    await tester.enterText(fields2.at(1), 'SuperAdmin@CIJ2026');
-    await tester.tap(find.text('Masuk Command Center'));
-    await tester.pumpAndSettle();
-    expect(find.text('Verif LPK'), findsNothing);
-    expect(find.textContaining('Total Omzet'), findsOneWidget);
-  });
+  testWidgets(
+    'App 3 (CIJ Master): Clean Beta State, LPK Registration & Version Badge',
+    (tester) async {
+      tester.view.physicalSize = const Size(1280, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(const ConsoleApp());
+      await tester.pumpAndSettle();
+
+      expect(find.text('CIJ Master'), findsOneWidget);
+      expect(find.text('Daftar Akun Master'), findsOneWidget);
+      expect(find.text(AppVersions.console.fullLabel), findsOneWidget);
+
+      // Open LPK Registration via text link and return
+      await tester.tap(find.text('Daftar Akun Master'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nomor Izin LPK Kemnaker / NIB'), findsOneWidget);
+      await tester.ensureVisible(
+        find.textContaining('Masuk ke CIJ Master', findRichText: true),
+      );
+      await tester.tap(
+        find.textContaining('Masuk ke CIJ Master', findRichText: true),
+      );
+      await tester.pumpAndSettle();
+
+      // 1. Login as INDOTECH Master
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'INDOTECH');
+      await tester.enterText(fields.at(1), 'Indotech@2026');
+      await tester.tap(find.text('Masuk ke CIJ Master'));
+      await tester.pumpAndSettle();
+      expect(find.text('MASTER INDOTECH HQ'), findsOneWidget);
+      expect(find.text('Verif LPK'), findsOneWidget);
+
+      // 2. Logout & login as LPK Super Admin -> Rp 0 clean beta omzet
+      await tester.tap(find.byIcon(Icons.logout_rounded));
+      await tester.pumpAndSettle();
+      final fields2 = find.byType(TextField);
+      await tester.enterText(fields2.at(0), 'superadmin');
+      await tester.enterText(fields2.at(1), 'SuperAdmin@CIJ2026');
+      await tester.tap(find.text('Masuk ke CIJ Master'));
+      await tester.pumpAndSettle();
+      expect(find.text('Verif LPK'), findsNothing);
+      expect(find.text('Rp 0'), findsWidgets);
+    },
+  );
 }

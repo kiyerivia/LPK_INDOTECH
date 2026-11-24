@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../config/app_version.dart';
 import '../../models/app_models.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
 import '../../theme/app_theme.dart';
 import 'auth_components.dart';
 
-enum _UserAuthMode { login, register, forgot }
+enum _UserAuthMode { login, register, verifyEmail, forgot }
 
 /// Dedicated Login & Register Dashboard for App 1: CIJ Driving (`cij-driving.vercel.app`)
 /// Visual Identity: Bright Radiant CIJ Red–Yellow Soft-UI tailored for Consumer / Siswa.
@@ -27,8 +28,12 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
   _UserAuthMode _mode = _UserAuthMode.login;
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _resending = false;
   bool _resetSent = false;
+  int _failedAttempts = 0;
   String? _error;
+  String? _resendInfo;
+  String? _pendingEmail;
   String _selectedTransmission = 'Manual (MT)';
   String _selectedArea = 'Purwokerto Utara';
   BiometricBinding? _enrolledBiometric;
@@ -82,6 +87,7 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
       _error = null;
     });
 
+    final attemptedId = _idCtrl.text.trim();
     final result = await AuthService.signIn(
       identifier: _idCtrl.text,
       password: _passCtrl.text,
@@ -90,18 +96,38 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
     if (!mounted) return;
 
     if (!result.success || result.account == null) {
+      _idCtrl.clear();
+      _passCtrl.clear();
       setState(() {
         _loading = false;
-        _error = result.message;
+        _resendInfo = null;
+        if (result.requiresEmailVerification && result.pendingEmail != null) {
+          _pendingEmail = result.pendingEmail;
+          _error = result.message;
+        } else {
+          _failedAttempts += 1;
+          if (_failedAttempts >= 5) {
+            _failedAttempts = 0;
+            _resetSent = false;
+            if (attemptedId.isNotEmpty) _resetCtrl.text = attemptedId;
+            _mode = _UserAuthMode.forgot;
+            _error = 'Anda sudah 5x salah memasukkan akun/kata sandi. Silakan pulihkan kata sandi Anda.';
+          } else {
+            _error = '${result.message} (Percobaan $_failedAttempts/5)';
+          }
+        }
       });
       return;
     }
+
+    _failedAttempts = 0;
 
     final acc = result.account!;
     widget.appState.login(
       name: acc.fullName,
       email: acc.email,
       username: acc.username,
+      phone: acc.phone,
       role: acc.role,
     );
     setState(() => _loading = false);
@@ -148,6 +174,7 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _resendInfo = null;
     });
 
     final result = await AuthService.register(
@@ -156,11 +183,16 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
       email: _idCtrl.text,
       password: _passCtrl.text,
       role: UserRole.siswa,
+      flavor: AppFlavor.user,
+      extraMetadata: {
+        'transmission': _selectedTransmission,
+        'pickup_area': _selectedArea,
+      },
       allowAdminCreation: false,
     );
     if (!mounted) return;
 
-    if (!result.success || result.account == null) {
+    if (!result.success) {
       setState(() {
         _loading = false;
         _error = result.message;
@@ -168,16 +200,47 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
       return;
     }
 
-    final acc = result.account!;
     widget.appState.setStudentLocation(_selectedArea);
-    widget.appState.login(
-      name: acc.fullName,
-      email: acc.email,
-      username: acc.username,
-      role: UserRole.siswa,
-    );
-    setState(() => _loading = false);
-    widget.onAuthenticated();
+
+    if (result.requiresEmailVerification) {
+      setState(() {
+        _loading = false;
+        _pendingEmail = result.pendingEmail ?? _idCtrl.text.trim().toLowerCase();
+        _mode = _UserAuthMode.verifyEmail;
+      });
+      return;
+    }
+
+    if (result.account != null) {
+      final acc = result.account!;
+      widget.appState.login(
+        name: acc.fullName,
+        email: acc.email,
+        username: acc.username,
+        role: UserRole.siswa,
+      );
+      setState(() => _loading = false);
+      widget.onAuthenticated();
+    }
+  }
+
+  Future<void> _handleResendVerification() async {
+    final email = _pendingEmail ?? _idCtrl.text.trim().toLowerCase();
+    setState(() {
+      _resending = true;
+      _error = null;
+      _resendInfo = null;
+    });
+    final res = await AuthService.resendVerificationEmail(email: email, flavor: AppFlavor.user);
+    if (!mounted) return;
+    setState(() {
+      _resending = false;
+      if (res.success) {
+        _resendInfo = res.message;
+      } else {
+        _error = res.message;
+      }
+    });
   }
 
   Future<void> _handleForgot() async {
@@ -278,45 +341,41 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
                             ),
                           ),
                           AuthComponents.logoBanner(width: 224, height: 138, fallbackColor: _cijRed),
-                          const SizedBox(height: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: _cijRed.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: _cijGold.withValues(alpha: 0.55)),
+                          const SizedBox(height: 4),
+                          AuthComponents.appTitle('CIJ Driving'),
+                          if (_mode == _UserAuthMode.register) ...[
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Pendaftaran Akun Siswa Baru',
+                              style: TextStyle(color: AuthComponents.textMuted, fontSize: 12, fontWeight: FontWeight.w600),
                             ),
-                            child: const Text(
-                              'CIJ DRIVING • APLIKASI KONSUMEN / SISWA',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: _cijRed,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.6,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          if (_mode != _UserAuthMode.forgot) ...[
-                            AuthComponents.modeSwitcher(
-                              isLogin: _mode == _UserAuthMode.login,
-                              loginLabel: 'Masuk Siswa',
-                              registerLabel: 'Daftar Siswa',
-                              activeGradient: const [_cijRed, _cijGold],
-                              activeShadow: _cijRed,
-                              trackBg: const Color(0xFFFFF8EE),
-                              trackBorder: _warmBorder,
-                              onSelectLogin: (login) => setState(() {
-                                _error = null;
-                                _mode = login ? _UserAuthMode.login : _UserAuthMode.register;
-                              }),
-                            ),
-                            const SizedBox(height: 18),
                           ],
+                          const SizedBox(height: 18),
 
-                          if (_error != null) AuthComponents.errorBanner(_error!),
+                          if (_error != null) ...[
+                            AuthComponents.errorBanner(_error!),
+                            if (_pendingEmail != null && _mode == _UserAuthMode.login) ...[
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: GestureDetector(
+                                  onTap: _resending ? null : _handleResendVerification,
+                                  child: Text(
+                                    _resending
+                                        ? 'Mengirim ulang tautan verifikasi...'
+                                        : 'Kirim ulang email verifikasi ke $_pendingEmail →',
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                      color: _cijRed,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                          if (_resendInfo != null && _mode == _UserAuthMode.login)
+                            AuthComponents.infoBanner(_resendInfo!, color: AppColors.emerald),
 
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 240),
@@ -326,7 +385,34 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
                                   ? _buildLoginForm()
                                   : _mode == _UserAuthMode.register
                                       ? _buildRegisterForm()
-                                      : _buildForgotForm(),
+                                      : _mode == _UserAuthMode.verifyEmail
+                                          ? AuthComponents.emailVerificationView(
+                                              email: _pendingEmail ?? _idCtrl.text.trim(),
+                                              accentColor: _cijRed,
+                                              title: 'Verifikasi Email Siswa',
+                                              subtitle:
+                                                  'Akun CIJ Driving Anda berhasil dibuat! Silakan konfirmasi alamat email terlebih dahulu agar akun aktif.',
+                                              resending: _resending,
+                                              resendInfo: _resendInfo,
+                                              onResend: _handleResendVerification,
+                                              onBackToLogin: () => setState(() {
+                                                _error = null;
+                                                _resendInfo = null;
+                                                _passCtrl.clear();
+                                                _mode = _UserAuthMode.login;
+                                              }),
+                                            )
+                                          : _buildForgotForm(),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            AppVersions.driving.fullLabel,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: AuthComponents.textMuted,
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -349,18 +435,6 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          alignment: WrapAlignment.center,
-          children: [
-            AuthComponents.featureChip(Icons.radar_rounded, 'GPS Radar Instruktur', _cijRed),
-            AuthComponents.featureChip(Icons.verified_user_rounded, 'Rem Ganda Aman', _cijGold),
-            AuthComponents.featureChip(Icons.badge_rounded, 'Pendampingan SIM A', AppColors.primary),
-          ],
-        ),
-        const SizedBox(height: 18),
-
         AuthComponents.fieldLabel('Nomor HP, email atau username'),
         const SizedBox(height: 7),
         AuthComponents.softInput(
@@ -398,12 +472,29 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
 
         AuthComponents.gradientButton(
           label: _loading ? 'Memverifikasi...' : 'Masuk ke CIJ Driving',
-          gradientColors: const [_cijRed, _cijRedBright, _cijGold],
-          shadowColor: _cijRed,
           icon: Icons.directions_car_rounded,
           onTap: _loading ? null : _handleLogin,
         ),
         const SizedBox(height: 14),
+
+        Center(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _error = null;
+              _resendInfo = null;
+              _mode = _UserAuthMode.register;
+            }),
+            child: const Text(
+              'Daftar Akun Driving',
+              style: TextStyle(
+                color: _cijRed,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
 
         Center(
           child: GestureDetector(
@@ -491,10 +582,27 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
-                  gradient: active ? const LinearGradient(colors: [_cijRed, _cijGold]) : null,
+                  gradient: active
+                      ? const LinearGradient(
+                          colors: [AuthComponents.matteTop, AuthComponents.matteBottom],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                        )
+                      : null,
                   color: active ? null : const Color(0xFFFFFBF7),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: active ? Colors.transparent : _warmBorder.withValues(alpha: 0.7)),
+                  border: Border.all(
+                    color: active ? AuthComponents.matteBorder : _warmBorder.withValues(alpha: 0.7),
+                  ),
+                  boxShadow: active
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A).withValues(alpha: 0.25),
+                            offset: const Offset(0, 4),
+                            blurRadius: 10,
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Text(
                   t,
@@ -556,10 +664,30 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
 
         AuthComponents.gradientButton(
           label: _loading ? 'Mendaftarkan...' : 'Daftar Akun Siswa',
-          gradientColors: const [_cijRed, _cijRedBright, _cijGold],
-          shadowColor: _cijRed,
           icon: Icons.person_add_alt_1_rounded,
           onTap: _loading ? null : _handleRegister,
+        ),
+        const SizedBox(height: 14),
+        Center(
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _error = null;
+              _resendInfo = null;
+              _mode = _UserAuthMode.login;
+            }),
+            child: RichText(
+              text: const TextSpan(
+                text: 'Sudah punya akun? ',
+                style: TextStyle(color: AuthComponents.textMuted, fontSize: 12),
+                children: [
+                  TextSpan(
+                    text: 'Masuk ke CIJ Driving',
+                    style: TextStyle(color: _cijRed, fontWeight: FontWeight.w800),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ],
     );

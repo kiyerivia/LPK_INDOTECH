@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../config/app_version.dart';
 import '../../models/app_models.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_theme.dart';
@@ -237,6 +238,15 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
                   ],
                 ),
               )),
+
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              '${AppVersions.console.fullLabel} • ${AppVersions.console.releaseDate}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w600),
+            ),
+          ),
         ],
       ),
     );
