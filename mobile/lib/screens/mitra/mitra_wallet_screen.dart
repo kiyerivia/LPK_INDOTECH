@@ -11,7 +11,10 @@ class MitraWalletScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const targetSessions = 25;
-    final progress = (appState.mitraMonthlySessions / targetSessions).clamp(0.0, 1.0);
+    final progress = (appState.mitraMonthlySessions / targetSessions).clamp(
+      0.0,
+      1.0,
+    );
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -21,51 +24,137 @@ class MitraWalletScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: AppTheme.matteBanner(color: AppColors.navBarBg, radius: 18),
+            decoration: AppTheme.matteBanner(
+              color: AppColors.navBarBg,
+              radius: 18,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.account_balance_wallet_rounded, color: AppColors.navBarActiveIcon, size: 18),
+                    Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: AppColors.navBarActiveIcon,
+                      size: 18,
+                    ),
                     SizedBox(width: 6),
-                    Text('Dompet Insentif Mitra', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text(
+                      'Saldo Siap Cair',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   formatRupiah(appState.mitraWalletBalance),
-                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Bagi hasil ${appState.mitraSplitPercent}% masuk otomatis setelah sesi selesai',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w500),
+                  appState.mitraEscrowBalance > 0
+                      ? 'Dana ditahan: ${formatRupiah(appState.mitraEscrowBalance)} (cair setelah kursus selesai)'
+                      : 'Bagi hasil ${appState.mitraSplitPercent}% masuk otomatis setelah kursus mengemudi selesai',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: appState.mitraWalletBalance >= 100000
+                    onPressed: appState.canWithdrawMitraWallet
                         ? () => _showWithdrawSheet(context)
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
-                      disabledBackgroundColor: Colors.white.withValues(alpha: 0.72),
+                      disabledBackgroundColor: Colors.white.withValues(
+                        alpha: 0.72,
+                      ),
                       disabledForegroundColor: AppColors.textMuted,
                       elevation: 2,
                       shadowColor: Colors.black.withValues(alpha: 0.16),
                       padding: const EdgeInsets.symmetric(vertical: 13),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
-                    icon: const Icon(Icons.outbox_rounded, size: 18),
-                    label: const Text('Tarik Saldo', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    icon: const Icon(Icons.account_balance_rounded, size: 18),
+                    label: Text(
+                      appState.canWithdrawMitraWallet
+                          ? 'Cairkan ke Rekening Bank'
+                          : 'Selesaikan Kursus untuk Cairkan',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+
+          if (appState.mitraEscrowBalance > 0) ...[
+            const SizedBox(height: 12),
+            GlassCard(
+              highlight: true,
+              highlightColor: AppColors.amber,
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: AppColors.amber.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.lock_clock_rounded,
+                      color: AppColors.amber,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Dana Ditahan (Kursus Berjalan)',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '${formatRupiah(appState.mitraEscrowBalance)} akan otomatis cair ke saldo setelah kursus selesai.',
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 11,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
 
           const SizedBox(height: 14),
 
@@ -76,11 +165,26 @@ class MitraWalletScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Text('Bonus Insentif Bulanan LPK', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 13)),
-                    const Spacer(),
+                    const Expanded(
+                      child: Text(
+                        'Bonus Insentif Bulanan',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       '${appState.mitraMonthlySessions}/$targetSessions Sesi',
-                      style: const TextStyle(color: AppColors.amber, fontWeight: FontWeight.w800, fontSize: 12),
+                      style: const TextStyle(
+                        color: AppColors.amber,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 12,
+                      ),
                     ),
                   ],
                 ),
@@ -99,14 +203,24 @@ class MitraWalletScreen extends StatelessWidget {
                   appState.mitraMonthlySessions >= targetSessions
                       ? 'Target tercapai! Bonus +Rp 350.000 siap dicairkan.'
                       : 'Selesaikan ${targetSessions - appState.mitraMonthlySessions} sesi lagi untuk bonus +Rp 350.000.',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                  ),
                 ),
               ],
             ),
           ),
 
           const SizedBox(height: 16),
-          const Text('Riwayat Insentif & Pencairan', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
+          const Text(
+            'Riwayat Insentif & Pencairan',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
           const SizedBox(height: 10),
 
           if (appState.walletTransactions.isEmpty)
@@ -121,7 +235,8 @@ class MitraWalletScreen extends StatelessWidget {
               ),
             )
           else
-            ...appState.walletTransactions.map((trx) => GlassCard(
+            ...appState.walletTransactions.map(
+              (trx) => GlassCard(
                 margin: const EdgeInsets.only(bottom: 10),
                 padding: const EdgeInsets.all(14),
                 child: Row(
@@ -130,12 +245,20 @@ class MitraWalletScreen extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: (trx.isCredit ? AppColors.emerald : AppColors.primary).withValues(alpha: 0.12),
+                        color:
+                            (trx.isCredit
+                                    ? AppColors.emerald
+                                    : AppColors.primary)
+                                .withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Icon(
-                        trx.isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-                        color: trx.isCredit ? AppColors.emerald : AppColors.primary,
+                        trx.isCredit
+                            ? Icons.arrow_downward_rounded
+                            : Icons.arrow_upward_rounded,
+                        color: trx.isCredit
+                            ? AppColors.emerald
+                            : AppColors.primary,
                         size: 20,
                       ),
                     ),
@@ -144,84 +267,137 @@ class MitraWalletScreen extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(trx.title, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 12)),
+                          Text(
+                            trx.title,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text('${trx.subtitle} • ${trx.dateLabel}', style: const TextStyle(color: AppColors.textMuted, fontSize: 10)),
+                          Text(
+                            '${trx.subtitle} • ${trx.dateLabel}',
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 10,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     Text(
                       '${trx.isCredit ? '+' : '-'}${formatRupiah(trx.amount)}',
                       style: TextStyle(
-                        color: trx.isCredit ? AppColors.emerald : AppColors.danger,
+                        color: trx.isCredit
+                            ? AppColors.emerald
+                            : AppColors.danger,
                         fontWeight: FontWeight.w800,
                         fontSize: 12,
                       ),
                     ),
                   ],
                 ),
-              )),
+              ),
+            ),
         ],
       ),
     );
   }
 
   void _showWithdrawSheet(BuildContext context) {
-    int selectedAmt = 500000;
-    String bank = 'BCA ****4821';
-    if (selectedAmt > appState.mitraWalletBalance) selectedAmt = appState.mitraWalletBalance;
+    final balance = appState.mitraWalletBalance;
+    int selectedAmt = balance;
+    String bank = 'Bank BCA ****4821';
+    final presets = <int>{
+      if (balance >= 250000) 250000,
+      if (balance >= 500000) 500000,
+      balance,
+    }.toList()..sort();
 
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) => Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Tarik Saldo Mitra', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: [250000, 500000, 1000000].where((a) => a <= appState.mitraWalletBalance).map((amt) {
-                  final sel = selectedAmt == amt;
-                  return ChoiceChip(
-                    label: Text(formatRupiah(amt)),
-                    selected: sel,
-                    selectedColor: AppColors.emerald.withValues(alpha: 0.2),
-                    onSelected: (_) => setModalState(() => selectedAmt = amt),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                children: ['BCA ****4821', 'BRI ****1102', 'GoPay 0812-xxx'].map((b) {
-                  return ChoiceChip(
-                    label: Text(b),
-                    selected: bank == b,
-                    selectedColor: AppColors.primary.withValues(alpha: 0.2),
-                    onSelected: (_) => setModalState(() => bank = b),
-                  );
-                }).toList(),
-              ),
-              const SizedBox(height: 16),
-              NeonButton(
-                label: 'Cairkan ${formatRupiah(selectedAmt)}',
-                color: AppColors.emerald,
-                width: double.infinity,
-                onPressed: () {
-                  appState.withdrawWallet(selectedAmt, bank);
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Penarikan ${formatRupiah(selectedAmt)} ke $bank berhasil!'), backgroundColor: AppColors.emerald),
-                  );
-                },
-              ),
-            ],
+        builder: (ctx, setModalState) => SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Cairkan ke Rekening Bank',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: presets.map((amt) {
+                    final sel = selectedAmt == amt;
+                    return ChoiceChip(
+                      label: Text(
+                        amt == balance
+                            ? 'Semua (${formatRupiah(amt)})'
+                            : formatRupiah(amt),
+                      ),
+                      selected: sel,
+                      selectedColor: AppColors.primary.withValues(alpha: 0.16),
+                      onSelected: (_) => setModalState(() => selectedAmt = amt),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children:
+                      [
+                        'Bank BCA ****4821',
+                        'Bank BRI ****1102',
+                        'Bank Mandiri ****8830',
+                      ].map((b) {
+                        return ChoiceChip(
+                          label: Text(b),
+                          selected: bank == b,
+                          selectedColor: AppColors.primary.withValues(
+                            alpha: 0.16,
+                          ),
+                          onSelected: (_) => setModalState(() => bank = b),
+                        );
+                      }).toList(),
+                ),
+                const SizedBox(height: 16),
+                NeonButton(
+                  label: 'Cairkan ${formatRupiah(selectedAmt)}',
+                  color: AppColors.primary,
+                  width: double.infinity,
+                  onPressed: () {
+                    final ok = appState.withdrawWallet(selectedAmt, bank);
+                    Navigator.pop(ctx);
+                    if (ok) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Pencairan ${formatRupiah(selectedAmt)} ke $bank berhasil.',
+                          ),
+                          backgroundColor: AppColors.emerald,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
           ),
         ),
       ),

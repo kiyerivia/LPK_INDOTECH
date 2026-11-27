@@ -512,6 +512,14 @@ class AppState extends ChangeNotifier {
     userEmail = email;
     if (phone.isNotEmpty) userPhone = phone;
     currentRole = role;
+    if (role == UserRole.mitra) {
+      final matchingPending = pendingMitras.where(
+        (m) => m.name.toLowerCase() == name.toLowerCase(),
+      );
+      if (matchingPending.isNotEmpty) {
+        mitraCarInfo = matchingPending.first.carInfo;
+      }
+    }
     notifyListeners();
   }
 
@@ -548,8 +556,46 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Dana pembayaran siswa yang masih ditahan (escrow) hingga kursus mengemudi selesai.
+  int get mitraEscrowBalance => orders
+      .where((o) => o.stage != TripStage.completed && o.stage != TripStage.rejected)
+      .fold<int>(0, (sum, o) => sum + o.mitraEarning);
+
+  bool get hasOngoingCourse => orders.any(
+        (o) => o.stage != TripStage.completed && o.stage != TripStage.rejected,
+      );
+
+  /// Saldo hanya bisa dicairkan ke rekening bank setelah kursus mengemudi selesai
+  /// dan dana telah cair ke saldo mitra.
+  bool get canWithdrawMitraWallet => mitraWalletBalance >= 100000;
+
   void toggleMitraOnline(bool val) {
     mitraIsOnline = val;
+    for (int i = 0; i < instructors.length; i++) {
+      final inst = instructors[i];
+      if (userName.isNotEmpty && inst.name.toLowerCase() == userName.toLowerCase()) {
+        instructors[i] = Instructor(
+          id: inst.id,
+          name: inst.name,
+          initial: inst.initial,
+          originDriver: inst.originDriver,
+          carModel: inst.carModel,
+          plateNumber: inst.plateNumber,
+          rating: inst.rating,
+          reviews: inst.reviews,
+          distanceKm: inst.distanceKm,
+          etaMinutes: inst.etaMinutes,
+          transmissions: inst.transmissions,
+          experienceYears: inst.experienceYears,
+          sessionsCompleted: inst.sessionsCompleted,
+          area: inst.area,
+          isOnline: val,
+          dualBrakeVerified: inst.dualBrakeVerified,
+          mapX: inst.mapX,
+          mapY: inst.mapY,
+        );
+      }
+    }
     notifyListeners();
   }
 
@@ -575,22 +621,24 @@ class AppState extends ChangeNotifier {
     required String transmission,
     required String pickupAddress,
   }) {
-    final perSessionMitra = ((package.price * mitraSplitPercent / 100) / package.sessions).round();
+    // Pembayaran siswa masuk ke dana ditahan (escrow) dan baru cair ke saldo mitra
+    // setelah kursus mengemudi diselesaikan.
+    final mitraTotalShare = (package.price * mitraSplitPercent / 100).round();
     final newOrder = BookingOrder(
       id: 'ORD-${9822 + orders.length}',
       studentName: userName,
-      studentPhone: '0812-3456-7890',
+      studentPhone: userPhone.isNotEmpty ? userPhone : '0812-3456-7890',
       pickupAddress: pickupAddress,
       distanceKm: instructor.distanceKm,
       instructorId: instructor.id,
       instructorName: instructor.name,
-      carInfo: '${instructor.carModel} • ${instructor.plateNumber}',
+      carInfo: '${instructor.carModel} - ${instructor.plateNumber}',
       transmission: transmission,
       packageName: package.name,
       date: date,
       timeSlot: timeSlot,
       totalPrice: package.price,
-      mitraEarning: perSessionMitra,
+      mitraEarning: mitraTotalShare,
       sessionIndex: 1,
       totalSessions: package.sessions,
       stage: TripStage.pending,
@@ -603,17 +651,20 @@ class AppState extends ChangeNotifier {
     final idx = orders.indexWhere((o) => o.id == orderId);
     if (idx == -1) return;
     final order = orders[idx];
+    if (order.stage == TripStage.completed) return;
+
     orders[idx] = order.copyWith(stage: newStage);
 
+    // Dana kursus hanya cair ke saldo mitra setelah kursus mengemudi selesai.
     if (newStage == TripStage.completed) {
       mitraWalletBalance += order.mitraEarning;
-      mitraMonthlySessions += 1;
+      mitraMonthlySessions += order.totalSessions;
       walletTransactions.insert(
         0,
         WalletTransaction(
           id: 'TRX-${walletTransactions.length + 10}',
-          title: 'Insentif Sesi #${order.sessionIndex} — ${order.studentName}',
-          subtitle: 'Smart Split $mitraSplitPercent% • ${order.packageName}',
+          title: 'Kursus Selesai - ${order.studentName}',
+          subtitle: 'Bagi hasil $mitraSplitPercent% (${order.packageName})',
           amount: order.mitraEarning,
           isCredit: true,
           dateLabel: 'Baru saja',
@@ -639,21 +690,24 @@ class AppState extends ChangeNotifier {
     }
   }
 
-  void withdrawWallet(int amount, String bankTarget) {
-    if (amount <= 0 || amount > mitraWalletBalance) return;
+  bool withdrawWallet(int amount, String bankTarget) {
+    if (amount <= 0 || amount > mitraWalletBalance || !canWithdrawMitraWallet) {
+      return false;
+    }
     mitraWalletBalance -= amount;
     walletTransactions.insert(
       0,
       WalletTransaction(
         id: 'WD-${walletTransactions.length + 10}',
-        title: 'Penarikan ke $bankTarget',
-        subtitle: 'Diproses Instan LPK Pay',
+        title: 'Pencairan ke $bankTarget',
+        subtitle: 'Transfer ke rekening bank mitra',
         amount: amount,
         isCredit: false,
         dateLabel: 'Baru saja',
       ),
     );
     notifyListeners();
+    return true;
   }
 
   void registerNewMitraApplication({
@@ -687,14 +741,22 @@ class AppState extends ChangeNotifier {
 
     // Add newly approved mitra directly into the nearest-driver radar!
     if (!instructors.any((i) => i.name == m.name)) {
+      final parts = m.carInfo.contains('•')
+          ? m.carInfo.split('•')
+          : m.carInfo.contains('-')
+              ? m.carInfo.split('-')
+              : [m.carInfo];
+      final carModel = parts.first.trim();
+      final plateNumber = parts.length > 1 ? parts.last.trim() : 'R 2026 LP';
+
       instructors.add(
         Instructor(
           id: m.id,
           name: m.name,
           initial: m.name.trim().split(' ').take(2).map((w) => w[0].toUpperCase()).join(),
           originDriver: m.driverBackground,
-          carModel: m.carInfo.split('•').first.trim(),
-          plateNumber: m.carInfo.contains('•') ? m.carInfo.split('•').last.trim() : 'R 2026 LP',
+          carModel: carModel,
+          plateNumber: plateNumber,
           rating: 5.0,
           reviews: 1,
           distanceKm: 3.1,

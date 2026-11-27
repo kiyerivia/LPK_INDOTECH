@@ -169,8 +169,13 @@ class SiswaScheduleScreen extends StatelessWidget {
           Row(
             children: [
               Text(order.id, style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
-              const Spacer(),
-              StatusPill(label: _stageText(order.stage), color: _stageColor(order.stage)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: StatusPill(label: _stageText(order.stage), color: _stageColor(order.stage)),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),

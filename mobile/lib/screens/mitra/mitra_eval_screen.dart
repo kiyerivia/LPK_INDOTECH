@@ -75,6 +75,7 @@ class _MitraEvalScreenState extends State<MitraEvalScreen> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<String>(
                   initialValue: _selectedModuleId,
+                  isExpanded: true,
                   dropdownColor: Colors.white,
                   style: const TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w600),
                   items: widget.appState.modules
@@ -131,7 +132,15 @@ class _MitraEvalScreenState extends State<MitraEvalScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('Skor Kelulusan Sesi:', style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
+                    const Expanded(
+                      child: Text(
+                        'Skor Kelulusan Sesi:',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(color: AppColors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     Text(
                       '${_score.round()} / 100',
                       style: const TextStyle(color: AppColors.emerald, fontSize: 18, fontWeight: FontWeight.w900),

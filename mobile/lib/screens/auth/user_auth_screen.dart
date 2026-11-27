@@ -611,7 +611,28 @@ class _UserAuthScreenState extends State<UserAuthScreen> {
             ),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
+        Center(
+          child: GestureDetector(
+            onTap: _loading
+                ? null
+                : () {
+                    _idCtrl.text = AuthService.demoSiswaEmail;
+                    _passCtrl.text = AuthService.demoSiswaPassword;
+                    _handleLogin();
+                  },
+            child: const Text(
+              'Gunakan akun demo untuk login',
+              style: TextStyle(
+                color: AuthComponents.textMuted,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
 
         AuthComponents.biometricButton(
           bioActive: bioActive,

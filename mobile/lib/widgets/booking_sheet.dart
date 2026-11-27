@@ -117,9 +117,13 @@ class _BookingSheetState extends State<BookingSheet> {
                           children: [
                             const Icon(Icons.near_me_rounded, color: AppColors.primary, size: 12),
                             const SizedBox(width: 4),
-                            Text(
-                              '${widget.instructor.distanceKm} km (±${widget.instructor.etaMinutes} mnt)',
-                              style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700),
+                            Expanded(
+                              child: Text(
+                                '${widget.instructor.distanceKm} km (±${widget.instructor.etaMinutes} mnt)',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(color: AppColors.primary, fontSize: 11, fontWeight: FontWeight.w700),
+                              ),
                             ),
                           ],
                         ),
@@ -311,13 +315,14 @@ class _BookingSheetState extends State<BookingSheet> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        Wrap(
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 6,
+                          runSpacing: 4,
                           children: [
                             Text(pkg.name, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.textPrimary, fontSize: 13)),
-                            if (pkg.isPopular) ...[
-                              const SizedBox(width: 6),
+                            if (pkg.isPopular)
                               const StatusPill(label: 'Populer', color: AppColors.amber),
-                            ],
                           ],
                         ),
                         const SizedBox(height: 2),
@@ -473,9 +478,13 @@ class _BookingSheetState extends State<BookingSheet> {
                 children: [
                   Icon(Icons.account_balance_wallet_rounded, color: AppColors.emerald, size: 16),
                   SizedBox(width: 6),
-                  Text(
-                    'Transparansi Smart Split Otomatis',
-                    style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 12),
+                  Expanded(
+                    child: Text(
+                      'Rincian Bagi Hasil',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 12),
+                    ),
                   ),
                 ],
               ),

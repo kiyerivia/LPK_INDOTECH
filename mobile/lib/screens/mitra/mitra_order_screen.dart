@@ -132,9 +132,14 @@ class MitraOrderScreen extends StatelessWidget {
 
           Row(
             children: [
-              _miniMetric('Saldo Mitra', formatRupiah(appState.mitraWalletBalance), AppColors.emerald, Icons.account_balance_wallet_rounded),
+              _miniMetric('Saldo Siap Cair', formatRupiah(appState.mitraWalletBalance), AppColors.emerald, Icons.account_balance_wallet_rounded),
               const SizedBox(width: 10),
-              _miniMetric('Bagi Hasil', '${appState.mitraSplitPercent}% / Sesi', AppColors.primary, Icons.pie_chart_rounded),
+              _miniMetric(
+                appState.mitraEscrowBalance > 0 ? 'Dana Ditahan' : 'Bagi Hasil',
+                appState.mitraEscrowBalance > 0 ? formatRupiah(appState.mitraEscrowBalance) : '${appState.mitraSplitPercent}% / Kursus',
+                appState.mitraEscrowBalance > 0 ? AppColors.amber : AppColors.primary,
+                appState.mitraEscrowBalance > 0 ? Icons.lock_clock_rounded : Icons.pie_chart_rounded,
+              ),
             ],
           ),
 

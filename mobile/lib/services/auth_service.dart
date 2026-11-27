@@ -81,6 +81,15 @@ class AuthService {
     }
   }
 
+  static const String demoSiswaEmail = 'demo.siswa@cij.id';
+  static const String demoSiswaPassword = 'DemoSiswa@2026';
+
+  static const String demoMitraEmail = 'demo.mitra@cij.id';
+  static const String demoMitraPassword = 'DemoMitra@2026';
+
+  static const String demoMasterEmail = 'demo.master@cij.id';
+  static const String demoMasterPassword = 'DemoMaster@2026';
+
   /// Built-in demo/authority accounts (MASTER INDOTECH > Super Admin > Mitra > Siswa)
   static final List<ManagedAccount> _accounts = [
     ManagedAccount(
@@ -89,6 +98,17 @@ class AuthService {
       fullName: 'MASTER INDOTECH',
       phone: '0811-2600-0000',
       passwordHash: hashPassword('Indotech@2026'),
+      role: UserRole.admin,
+      isSuperAdmin: true,
+      isMaster: true,
+      verifiedByMaster: true,
+    ),
+    ManagedAccount(
+      username: 'demo.master',
+      email: demoMasterEmail,
+      fullName: 'Demo Master CIJ',
+      phone: '0812-0000-0003',
+      passwordHash: hashPassword(demoMasterPassword),
       role: UserRole.admin,
       isSuperAdmin: true,
       isMaster: true,
@@ -114,11 +134,27 @@ class AuthService {
       role: UserRole.mitra,
     ),
     ManagedAccount(
+      username: 'demo.mitra',
+      email: demoMitraEmail,
+      fullName: 'Demo Mitra CIJ',
+      phone: '0812-0000-0002',
+      passwordHash: hashPassword(demoMitraPassword),
+      role: UserRole.mitra,
+    ),
+    ManagedAccount(
       username: 'siswa',
       email: 'siswa@lpk-cij.id',
       fullName: 'Dimas Aditya',
       phone: '0857-1234-5678',
       passwordHash: hashPassword('Siswa@2026'),
+      role: UserRole.siswa,
+    ),
+    ManagedAccount(
+      username: 'demo.siswa',
+      email: demoSiswaEmail,
+      fullName: 'Demo Siswa CIJ',
+      phone: '0812-0000-0001',
+      passwordHash: hashPassword(demoSiswaPassword),
       role: UserRole.siswa,
     ),
   ];

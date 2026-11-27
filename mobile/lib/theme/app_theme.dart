@@ -186,6 +186,11 @@ class AppTheme {
         suffixIconColor: AppColors.textMuted,
       ),
       dividerColor: AppColors.borderSubtle,
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        insetPadding: const EdgeInsets.fromLTRB(16, 0, 16, 102),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
     );
   }
 }
