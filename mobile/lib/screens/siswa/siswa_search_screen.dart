@@ -106,13 +106,19 @@ class _SiswaSearchScreenState extends State<SiswaSearchScreen> {
                         onTap: () => setState(() => _radiusKm = r),
                         child: Container(
                           margin: const EdgeInsets.only(left: 6),
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                           decoration: BoxDecoration(
-                            gradient: sel
-                                ? const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight])
-                                : null,
-                            color: sel ? null : AppColors.backgroundAlt,
+                            color: sel ? AppColors.primary : AppColors.backgroundAlt,
                             borderRadius: BorderRadius.circular(10),
+                            boxShadow: sel
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(alpha: 0.24),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
                           ),
                           child: Text(
                             '${r.toInt()} km',

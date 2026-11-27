@@ -14,9 +14,9 @@ class NavTabItem {
   });
 }
 
-/// Liquid Curved-Notch Floating Navbar (Inspired directly by Menu_Animation.mp4)
-/// Features a sleek rounded bar with an animated concave U-shaped cutout and a
-/// floating circular bubble that glides fluidly to cradle the active tab icon.
+/// Matte Curved-Notch Floating Bottom Navigation Bar
+/// Uses solid matte CIJ terracotta-red fill (no gradient) with layered drop shadows
+/// and a matte warm-gold active indicator.
 class NeonArchNavbar extends StatefulWidget {
   final List<NavTabItem> tabs;
   final int currentIndex;
@@ -47,7 +47,7 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
     _currentPos = widget.currentIndex.toDouble();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 360),
     );
     _positionAnim = AlwaysStoppedAnimation(_currentPos);
   }
@@ -59,14 +59,13 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
     final target = widget.currentIndex.clamp(0, maxIdx).toDouble();
 
     if (oldWidget.tabs.length != widget.tabs.length) {
-      // Role switched (tab count changed) — snap cleanly to new tab
       _controller.stop();
       _currentPos = target;
       _positionAnim = AlwaysStoppedAnimation(_currentPos);
     } else if (oldWidget.currentIndex != widget.currentIndex) {
       final begin = _positionAnim.value.clamp(0.0, maxIdx.toDouble());
       _positionAnim = Tween<double>(begin: begin, end: target).animate(
-        CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+        CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
       );
       _controller.forward(from: 0);
       _currentPos = target;
@@ -79,28 +78,19 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
     super.dispose();
   }
 
-  Color get _activeIconGlow {
-    if (widget.accentColor == AppColors.emerald) {
-      return const Color(0xFF2DD4BF); // Luminous Mint-Teal (Mitra)
-    } else if (widget.accentColor == AppColors.purple) {
-      return const Color(0xFFC084FC); // Luminous Lavender (Admin)
-    }
-    return const Color(0xFFFFB800); // Signature Luminous Gold from Menu_Animation.mp4 (Siswa)
-  }
-
   @override
   Widget build(BuildContext context) {
     final tabCount = widget.tabs.length;
     final safeIndex = widget.currentIndex.clamp(0, tabCount - 1);
 
-    const double totalHeight = 84;
-    const double barTop = 20;
+    const double totalHeight = 82;
+    const double barTop = 18;
     const double barHeight = 64;
     const double circleSize = 46;
     const double sidePad = 8;
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
       child: SizedBox(
         height: totalHeight,
         child: LayoutBuilder(
@@ -118,7 +108,7 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
                 return Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // 1. Sleek Rounded Bar with Dynamic Concave U-Notch Cutout
+                    // 1. Solid Matte Bar with Concave Notch & Layered Shadow
                     Positioned.fill(
                       child: CustomPaint(
                         painter: _CurvedNotchBarPainter(
@@ -126,42 +116,34 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
                           barTop: barTop,
                           barHeight: barHeight,
                           tabWidth: tabWidth,
-                          accentColor: widget.accentColor,
                         ),
                       ),
                     ),
 
-                    // 2. Gliding Floating Circular Bubble Nestled in the Concave Notch
+                    // 2. Solid Matte Floating Circle in the Notch (No Gradient)
                     Positioned(
                       left: notchCenterX - (circleSize / 2),
-                      top: barTop - 16,
+                      top: barTop - 15,
                       width: circleSize,
                       height: circleSize,
                       child: Container(
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFF1E293B), // Futuristic Slate
-                              Color(0xFF0B1120), // Deep Obsidian Navy
-                            ],
-                          ),
+                          color: AppColors.navBarBubble,
                           border: Border.all(
-                            color: _activeIconGlow.withValues(alpha: 0.45),
-                            width: 1.4,
+                            color: AppColors.navBarActiveIcon.withValues(alpha: 0.55),
+                            width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFF0F172A).withValues(alpha: 0.32),
-                              blurRadius: 14,
-                              offset: const Offset(0, 6),
+                              color: const Color(0xFF2B140E).withValues(alpha: 0.34),
+                              blurRadius: 12,
+                              offset: const Offset(0, 5),
                             ),
                             BoxShadow(
-                              color: _activeIconGlow.withValues(alpha: 0.25),
-                              blurRadius: 14,
-                              spreadRadius: -2,
+                              color: const Color(0xFF000000).withValues(alpha: 0.14),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
                             ),
                           ],
                         ),
@@ -186,33 +168,19 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
                               child: Stack(
                                 alignment: Alignment.center,
                                 children: [
-                                  // Animated Icon — rises smoothly into the floating circle when active
                                   AnimatedPositioned(
-                                    duration: const Duration(milliseconds: 340),
-                                    curve: Curves.easeOutBack,
-                                    top: isSelected ? (barTop - 16 + (circleSize - 23) / 2) : (barTop + 14),
+                                    duration: const Duration(milliseconds: 280),
+                                    curve: Curves.easeOutCubic,
+                                    top: isSelected ? (barTop - 15 + (circleSize - 22) / 2) : (barTop + 13),
                                     child: Stack(
                                       clipBehavior: Clip.none,
                                       children: [
-                                        AnimatedScale(
-                                          scale: isSelected ? 1.08 : 0.96,
-                                          duration: const Duration(milliseconds: 280),
-                                          curve: Curves.easeOutBack,
-                                          child: Icon(
-                                            tab.icon,
-                                            size: 23,
-                                            color: isSelected
-                                                ? _activeIconGlow
-                                                : Colors.white.withValues(alpha: 0.85),
-                                            shadows: isSelected
-                                                ? [
-                                                    Shadow(
-                                                      color: _activeIconGlow.withValues(alpha: 0.65),
-                                                      blurRadius: 10,
-                                                    ),
-                                                  ]
-                                                : null,
-                                          ),
+                                        Icon(
+                                          tab.icon,
+                                          size: 22,
+                                          color: isSelected
+                                              ? AppColors.navBarActiveIcon
+                                              : Colors.white.withValues(alpha: 0.82),
                                         ),
                                         if ((tab.badgeCount ?? 0) > 0)
                                           Positioned(
@@ -221,14 +189,14 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
                                             child: Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                                               decoration: BoxDecoration(
-                                                color: AppColors.emerald,
+                                                color: AppColors.navBarActiveIcon,
                                                 borderRadius: BorderRadius.circular(10),
-                                                border: Border.all(color: const Color(0xFF0F172A), width: 1.5),
+                                                border: Border.all(color: AppColors.navBarBubble, width: 1.4),
                                               ),
                                               child: Text(
                                                 '${tab.badgeCount}',
                                                 style: const TextStyle(
-                                                  color: Colors.white,
+                                                  color: AppColors.textPrimary,
                                                   fontSize: 9,
                                                   fontWeight: FontWeight.w800,
                                                 ),
@@ -238,20 +206,18 @@ class _NeonArchNavbarState extends State<NeonArchNavbar>
                                       ],
                                     ),
                                   ),
-
-                                  // Crisp Label tucked cleanly along the bottom of the bar
                                   Positioned(
-                                    bottom: 7,
+                                    bottom: 8,
                                     left: 2,
                                     right: 2,
                                     child: AnimatedDefaultTextStyle(
-                                      duration: const Duration(milliseconds: 240),
+                                      duration: const Duration(milliseconds: 200),
                                       style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
+                                        fontSize: 10.5,
+                                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                                         color: isSelected
-                                            ? _activeIconGlow
-                                            : Colors.white.withValues(alpha: 0.62),
+                                            ? AppColors.navBarActiveIcon
+                                            : Colors.white.withValues(alpha: 0.78),
                                       ),
                                       child: Text(
                                         tab.label,
@@ -284,14 +250,12 @@ class _CurvedNotchBarPainter extends CustomPainter {
   final double barTop;
   final double barHeight;
   final double tabWidth;
-  final Color accentColor;
 
   _CurvedNotchBarPainter({
     required this.notchCenterX,
     required this.barTop,
     required this.barHeight,
     required this.tabWidth,
-    required this.accentColor,
   });
 
   @override
@@ -299,32 +263,29 @@ class _CurvedNotchBarPainter extends CustomPainter {
     final w = size.width;
     final top = barTop;
     final bottom = barTop + barHeight;
-    const double cornerR = 20.0;
+    const double cornerR = 18.0;
 
-    // Smooth organic U-notch parameters matching Menu_Animation.mp4
-    final double notchHalfW = math.min(40.0, tabWidth * 0.60);
-    final double notchBottom = top + 36.5;
+    final double notchHalfW = math.min(38.0, tabWidth * 0.58);
+    final double notchBottom = top + 34.5;
 
-    final double leftShoulder = (notchCenterX - notchHalfW).clamp(cornerR, w - cornerR - 40);
-    final double rightShoulder = (notchCenterX + notchHalfW).clamp(cornerR + 40, w - cornerR);
+    final double leftShoulder = (notchCenterX - notchHalfW).clamp(cornerR, w - cornerR - 38);
+    final double rightShoulder = (notchCenterX + notchHalfW).clamp(cornerR + 38, w - cornerR);
     final double leftSpan = notchCenterX - leftShoulder;
     final double rightSpan = rightShoulder - notchCenterX;
 
     final path = Path()
       ..moveTo(cornerR, top)
       ..lineTo(leftShoulder, top)
-      // Smooth S-curve down into circular cradle
       ..cubicTo(
         leftShoulder + leftSpan * 0.42,
         top,
-        notchCenterX - 27,
+        notchCenterX - 26,
         notchBottom,
         notchCenterX,
         notchBottom,
       )
-      // Smooth S-curve back up to top edge
       ..cubicTo(
-        notchCenterX + 27,
+        notchCenterX + 26,
         notchBottom,
         rightShoulder - rightSpan * 0.42,
         top,
@@ -341,40 +302,26 @@ class _CurvedNotchBarPainter extends CustomPainter {
       ..quadraticBezierTo(0, top, cornerR, top)
       ..close();
 
-    // Soft Floating Shadow underneath the notched bar
+    // Layered Drop Shadow underneath the matte bar
     canvas.drawShadow(
       path.shift(const Offset(0, 6)),
-      const Color(0xFF0F172A).withValues(alpha: 0.35),
-      18,
+      const Color(0xFF2B140E).withValues(alpha: 0.34),
+      16,
       true,
     );
 
-    // Sleek Deep Midnight Futuristic Gradient Fill
+    // Solid Matte Fill (Reddish-Yellow / Terracotta Doff — No Gradient)
     final fillPaint = Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xFF131C31),
-          Color(0xFF0B1120),
-        ],
-      ).createShader(Rect.fromLTWH(0, top, w, barHeight))
+      ..color = AppColors.navBarBg
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(path, fillPaint);
 
-    // Subtle Crisp Glass Rim Highlight along the notched silhouette
+    // Subtle Crisp Rim Edge
     final borderPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.white.withValues(alpha: 0.22),
-          accentColor.withValues(alpha: 0.12),
-        ],
-      ).createShader(Rect.fromLTWH(0, top, w, barHeight))
+      ..color = Colors.white.withValues(alpha: 0.14)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1;
+      ..strokeWidth = 1.0;
 
     canvas.drawPath(path, borderPaint);
   }
@@ -382,6 +329,5 @@ class _CurvedNotchBarPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _CurvedNotchBarPainter oldDelegate) =>
       oldDelegate.notchCenterX != notchCenterX ||
-      oldDelegate.tabWidth != tabWidth ||
-      oldDelegate.accentColor != accentColor;
+      oldDelegate.tabWidth != tabWidth;
 }

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/app_models.dart';
 import '../theme/app_theme.dart';
 import 'google_map_embed_stub.dart'
-    if (dart.library.js_interop) 'google_map_embed_web.dart' as gmaps;
+    if (dart.library.js_interop) 'google_map_embed_web.dart'
+    as gmaps;
 
 /// Interactive Google Maps + Live GPS Radar Overlay for CIJ Driving
 class RadarDriverMap extends StatefulWidget {
@@ -43,7 +44,9 @@ class _RadarDriverMapState extends State<RadarDriverMap>
   };
 
   ({double lat, double lng}) get _activeCoords =>
-      _liveGps ?? _areaCoords[widget.userArea] ?? const (lat: -7.4244, lng: 109.2396);
+      _liveGps ??
+      _areaCoords[widget.userArea] ??
+      const (lat: -7.4244, lng: 109.2396);
 
   int get _zoomForRadius {
     if (widget.radiusKm <= 3.0) return 14;
@@ -109,23 +112,19 @@ class _RadarDriverMapState extends State<RadarDriverMap>
       height: 280,
       width: double.infinity,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFFEAF3FF), Color(0xFFDFEEFD)],
-        ),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white, width: 1.5),
+        color: AppColors.backgroundAlt,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.borderSubtle, width: 1.2),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.14),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF1F1D1A).withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(18),
         child: LayoutBuilder(
           builder: (context, constraints) {
             final w = constraints.maxWidth;
@@ -159,7 +158,10 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                           size: Size(w, h),
                           painter: _RadarGridPainter(
                             progress: _pulseCtrl.value,
-                            radiusFactor: (widget.radiusKm / 10).clamp(0.35, 1.0),
+                            radiusFactor: (widget.radiusKm / 10).clamp(
+                              0.35,
+                              1.0,
+                            ),
                             drawBackgroundGrid: false,
                           ),
                         ),
@@ -172,7 +174,10 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                   top: 12,
                   left: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.94),
                       borderRadius: BorderRadius.circular(14),
@@ -196,13 +201,11 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          _liveGps != null
-                              ? 'GOOGLE MAPS • GPS AKTIF'
-                              : 'GOOGLE MAPS • ${widget.userArea}',
+                          _liveGps != null ? 'GPS Aktif' : widget.userArea,
                           style: const TextStyle(
                             color: AppColors.textPrimary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -215,27 +218,26 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                   top: 12,
                   right: 12,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF3E4550), Color(0xFF232830)],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
-                      borderRadius: BorderRadius.circular(14),
+                      color: const Color(0xFF292524),
+                      borderRadius: BorderRadius.circular(10),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: Text(
-                      '${widget.instructors.length} Driver • ≤${widget.radiusKm.toInt()} km',
+                      '${widget.instructors.length} Mitra (${widget.radiusKm.toInt()} km)',
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 10,
+                        fontSize: 10.5,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -255,7 +257,10 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                           decoration: BoxDecoration(
                             color: AppColors.primary.withValues(alpha: 0.18),
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.primary, width: 2),
+                            border: Border.all(
+                              color: AppColors.primary,
+                              width: 2,
+                            ),
                           ),
                           alignment: Alignment.center,
                           child: Container(
@@ -269,17 +274,27 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                         ),
                         const SizedBox(height: 2),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.94),
                             borderRadius: BorderRadius.circular(6),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 6),
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.08),
+                                blurRadius: 6,
+                              ),
                             ],
                           ),
                           child: const Text(
                             'Lokasi Kamu',
-                            style: TextStyle(color: AppColors.textPrimary, fontSize: 9, fontWeight: FontWeight.w800),
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
                         ),
                       ],
@@ -298,23 +313,32 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                         scale: isSelected ? 1.15 : 1.0,
                         duration: const Duration(milliseconds: 200),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 9,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
-                            gradient: isSelected
-                                ? const LinearGradient(colors: [AppColors.primary, AppColors.primaryLight])
-                                : null,
-                            color: isSelected ? null : Colors.white.withValues(alpha: 0.96),
-                            borderRadius: BorderRadius.circular(12),
+                            color: isSelected
+                                ? AppColors.primary
+                                : Colors.white.withValues(alpha: 0.96),
+                            borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                              color: isSelected ? Colors.white : AppColors.emerald.withValues(alpha: 0.65),
-                              width: 1.4,
+                              color: isSelected
+                                  ? Colors.white
+                                  : AppColors.primary.withValues(alpha: 0.55),
+                              width: 1.2,
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: (isSelected ? AppColors.primary : Colors.black)
-                                    .withValues(alpha: isSelected ? 0.35 : 0.14),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                                color:
+                                    (isSelected
+                                            ? AppColors.primary
+                                            : Colors.black)
+                                        .withValues(
+                                          alpha: isSelected ? 0.30 : 0.14,
+                                        ),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
@@ -323,14 +347,18 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                             children: [
                               Icon(
                                 Icons.directions_car_rounded,
-                                color: isSelected ? Colors.white : AppColors.emerald,
+                                color: isSelected
+                                    ? Colors.white
+                                    : AppColors.emerald,
                                 size: 13,
                               ),
                               const SizedBox(width: 4),
                               Text(
                                 '${inst.distanceKm}km',
                                 style: TextStyle(
-                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  color: isSelected
+                                      ? Colors.white
+                                      : AppColors.textPrimary,
                                   fontSize: 10,
                                   fontWeight: FontWeight.w800,
                                 ),
@@ -350,19 +378,27 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                   child: GestureDetector(
                     onTap: () => setState(() => _satellite = !_satellite),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.94),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8),
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 8,
+                          ),
                         ],
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
-                            _satellite ? Icons.map_rounded : Icons.satellite_alt_rounded,
+                            _satellite
+                                ? Icons.map_rounded
+                                : Icons.satellite_alt_rounded,
                             size: 13,
                             color: AppColors.textPrimary,
                           ),
@@ -391,12 +427,18 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                       GestureDetector(
                         onTap: _locatingGps ? null : _locateMe,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.94),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8),
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                              ),
                             ],
                           ),
                           child: Row(
@@ -405,7 +447,9 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                               Icon(
                                 Icons.my_location_rounded,
                                 size: 13,
-                                color: _liveGps != null ? AppColors.emerald : AppColors.primary,
+                                color: _liveGps != null
+                                    ? AppColors.emerald
+                                    : AppColors.primary,
                               ),
                               const SizedBox(width: 5),
                               Text(
@@ -422,14 +466,18 @@ class _RadarDriverMapState extends State<RadarDriverMap>
                       ),
                       const SizedBox(width: 6),
                       GestureDetector(
-                        onTap: () => gmaps.openInGoogleMaps(coords.lat, coords.lng),
+                        onTap: () =>
+                            gmaps.openInGoogleMaps(coords.lat, coords.lng),
                         child: Container(
                           padding: const EdgeInsets.all(6),
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.94),
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.15), blurRadius: 8),
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 8,
+                              ),
                             ],
                           ),
                           child: const Icon(
@@ -481,14 +529,24 @@ class _RadarGridPainter extends CustomPainter {
       final roadPaint = Paint()
         ..color = Colors.white.withValues(alpha: 0.85)
         ..strokeWidth = 4;
-      canvas.drawLine(Offset(0, size.height * 0.65), Offset(size.width, size.height * 0.32), roadPaint);
-      canvas.drawLine(Offset(size.width * 0.28, 0), Offset(size.width * 0.62, size.height), roadPaint);
+      canvas.drawLine(
+        Offset(0, size.height * 0.65),
+        Offset(size.width, size.height * 0.32),
+        roadPaint,
+      );
+      canvas.drawLine(
+        Offset(size.width * 0.28, 0),
+        Offset(size.width * 0.62, size.height),
+        roadPaint,
+      );
     }
 
     // Concentric Radar Rings
     final maxR = (size.shortestSide * 0.44) * radiusFactor;
     final ringPaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: drawBackgroundGrid ? 0.18 : 0.32)
+      ..color = AppColors.primary.withValues(
+        alpha: drawBackgroundGrid ? 0.18 : 0.32,
+      )
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.4;
 

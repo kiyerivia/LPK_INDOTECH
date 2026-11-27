@@ -130,7 +130,7 @@ class AdminMitraScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(inst.name, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 13)),
-                          Text('${inst.carModel} • ${inst.area} • ⭐ ${inst.rating}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                          Text('${inst.carModel} - ${inst.area} (${inst.rating})', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                         ],
                       ),
                     ),

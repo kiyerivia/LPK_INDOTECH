@@ -143,11 +143,17 @@ class _MitraProfileScreenState extends State<MitraProfileScreen> {
                         width: 40,
                         height: 40,
                         decoration: BoxDecoration(
-                          gradient: sel
-                              ? const LinearGradient(colors: [AppColors.emerald, Color(0xFF14B8A6)])
+                          color: sel ? AppColors.primary : AppColors.backgroundAlt,
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: sel
+                              ? [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.22),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ]
                               : null,
-                          color: sel ? null : AppColors.backgroundAlt,
-                          borderRadius: BorderRadius.circular(12),
                         ),
                         alignment: Alignment.center,
                         child: Text(
@@ -169,9 +175,9 @@ class _MitraProfileScreenState extends State<MitraProfileScreen> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              '${AppVersions.partner.fullLabel} • ${AppVersions.partner.releaseDate}',
+              AppVersions.partner.shortLabel,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w600),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w500),
             ),
           ),
         ],
@@ -251,7 +257,7 @@ class _MitraProfileScreenState extends State<MitraProfileScreen> {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Pengajuan dikirim! Cek Mode Admin LPK → Tab Mitra untuk menyetujui.'),
+                      content: Text('Pengajuan dikirim dan menunggu verifikasi Admin LPK.'),
                       backgroundColor: AppColors.emerald,
                     ),
                   );

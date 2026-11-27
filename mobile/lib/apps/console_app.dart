@@ -138,86 +138,71 @@ class _ConsoleAppShellState extends State<ConsoleAppShell> {
       }
     }
 
-    final accent = showMasterTabs ? const Color(0xFFDC2626) : AppColors.purple;
+    final accent = showMasterTabs ? AppColors.primary : AppColors.primaryDark;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF7F7FE), Color(0xFFF0F2FC), Color(0xFFFFFBF4)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -90,
-              left: -70,
-              child: Container(
-                width: 260,
-                height: 260,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [accent.withValues(alpha: 0.14), Colors.transparent],
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  _buildHeader(accent, showMasterTabs),
-                  if (_appState.isMaster) _buildMasterLevelToggle(),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: KeyedSubtree(
-                        key: ValueKey('${showMasterTabs ? "master" : "lpk"}-$_tab'),
-                        child: screen,
-                      ),
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _buildHeader(accent, showMasterTabs),
+                if (_appState.isMaster) _buildMasterLevelToggle(),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: KeyedSubtree(
+                      key: ValueKey('${showMasterTabs ? "master" : "lpk"}-$_tab'),
+                      child: screen,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: NeonArchNavbar(
-                tabs: tabs,
-                currentIndex: _tab,
-                accentColor: accent,
-                onTabSelected: (i) => setState(() => _tab = i),
-              ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NeonArchNavbar(
+              tabs: tabs,
+              currentIndex: _tab,
+              accentColor: accent,
+              onTabSelected: (i) => setState(() => _tab = i),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader(Color accent, bool showMasterTabs) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: accent.withValues(alpha: 0.3), width: 1.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderSubtle),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1F1D1A).withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Image.asset(
               'assets/logo.png',
               fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => Icon(Icons.admin_panel_settings_rounded, color: accent, size: 21),
+              errorBuilder: (_, _, _) => Icon(Icons.admin_panel_settings_rounded, color: accent, size: 20),
             ),
           ),
           const SizedBox(width: 10),
@@ -225,25 +210,17 @@ class _ConsoleAppShellState extends State<ConsoleAppShell> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RichText(
-                  text: TextSpan(
-                    text: showMasterTabs ? 'MASTER ' : 'LPK ',
-                    style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w900, fontSize: 15),
-                    children: [
-                      TextSpan(
-                        text: showMasterTabs ? 'INDOTECH' : 'SUPER ADMIN',
-                        style: TextStyle(color: accent),
-                      ),
-                    ],
-                  ),
+                Text(
+                  showMasterTabs ? 'CIJ Master' : 'LPK Admin',
+                  style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 15.5),
                 ),
                 Text(
                   showMasterTabs
-                      ? 'Otoritas Verifikasi LPK & Holding Nasional'
-                      : 'Pusat Operasional LPK Citra Indotech Jaya',
+                      ? 'Indotech Pusat'
+                      : 'LPK Citra Indotech Jaya',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w500),
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -251,31 +228,32 @@ class _ConsoleAppShellState extends State<ConsoleAppShell> {
           GestureDetector(
             onTap: _logout,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.92),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white, width: 1.2),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1F1D1A).withValues(alpha: 0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    _appState.isMaster ? Icons.workspace_premium_rounded : Icons.admin_panel_settings_rounded,
-                    size: 14,
-                    color: _appState.isMaster ? AppColors.amber : AppColors.purple,
-                  ),
-                  const SizedBox(width: 5),
                   Text(
-                    _appState.isMaster ? 'MASTER' : 'LPK Admin',
-                    style: TextStyle(
-                      color: _appState.isMaster ? AppColors.amber : AppColors.textPrimary,
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
+                    _appState.isMaster ? 'Master' : 'Admin LPK',
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(width: 5),
-                  const Icon(Icons.logout_rounded, size: 14, color: AppColors.danger),
+                  const SizedBox(width: 6),
+                  const Icon(Icons.logout_rounded, size: 15, color: AppColors.danger),
                 ],
               ),
             ),
@@ -285,15 +263,14 @@ class _ConsoleAppShellState extends State<ConsoleAppShell> {
     );
   }
 
-  /// Exclusive to MASTER INDOTECH: switch between National Master View and Branch LPK Super Admin View
   Widget _buildMasterLevelToggle() {
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 2, 16, 6),
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white),
+        color: AppColors.backgroundAlt,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderSubtle),
       ),
       child: Row(
         children: [
@@ -306,29 +283,28 @@ class _ConsoleAppShellState extends State<ConsoleAppShell> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
                 decoration: BoxDecoration(
-                  gradient: !_masterViewingLpkMode
-                      ? const LinearGradient(colors: [Color(0xFFDC2626), Color(0xFFF59E0B)])
+                  color: !_masterViewingLpkMode ? AppColors.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: !_masterViewingLpkMode
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
                       : null,
-                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.workspace_premium_rounded, size: 14, color: !_masterViewingLpkMode ? Colors.white : AppColors.textMuted),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '1. INDOTECH Master',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: !_masterViewingLpkMode ? Colors.white : AppColors.textSecondary,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
+                alignment: Alignment.center,
+                child: Text(
+                  'INDOTECH Master',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: !_masterViewingLpkMode ? Colors.white : AppColors.textSecondary,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),
@@ -342,29 +318,28 @@ class _ConsoleAppShellState extends State<ConsoleAppShell> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
                 decoration: BoxDecoration(
-                  gradient: _masterViewingLpkMode
-                      ? const LinearGradient(colors: [Color(0xFF4F46E5), Color(0xFF6366F1)])
+                  color: _masterViewingLpkMode ? AppColors.primaryDark : Colors.transparent,
+                  borderRadius: BorderRadius.circular(9),
+                  boxShadow: _masterViewingLpkMode
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primaryDark.withValues(alpha: 0.25),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
                       : null,
-                  borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.admin_panel_settings_rounded, size: 14, color: _masterViewingLpkMode ? Colors.white : AppColors.textMuted),
-                    const SizedBox(width: 4),
-                    Flexible(
-                      child: Text(
-                        '2. LPK Super Admin',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: _masterViewingLpkMode ? Colors.white : AppColors.textSecondary,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                  ],
+                alignment: Alignment.center,
+                child: Text(
+                  'Admin LPK',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _masterViewingLpkMode ? Colors.white : AppColors.textSecondary,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ),

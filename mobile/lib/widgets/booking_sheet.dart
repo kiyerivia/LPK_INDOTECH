@@ -509,27 +509,31 @@ class _BookingSheetState extends State<BookingSheet> {
       children: [
         const SizedBox(height: 10),
         Container(
-          width: 78,
-          height: 78,
+          width: 68,
+          height: 68,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(colors: [AppColors.emerald, Color(0xFF14B8A6)]),
+            color: AppColors.emerald,
             shape: BoxShape.circle,
             boxShadow: [
-              BoxShadow(color: AppColors.emerald.withValues(alpha: 0.32), blurRadius: 22),
+              BoxShadow(
+                color: AppColors.emerald.withValues(alpha: 0.28),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
             ],
           ),
-          child: const Icon(Icons.check_rounded, color: Colors.white, size: 42),
+          child: const Icon(Icons.check_rounded, color: Colors.white, size: 36),
         ),
         const SizedBox(height: 16),
         const Text(
-          'Order Terkirim ke Mitra!',
-          style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+          'Order Terkirim',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
         ),
         const SizedBox(height: 6),
         Text(
-          '${widget.instructor.name} (${widget.instructor.plateNumber}) menerima notifikasi order kamu. Coba pindah ke Mode Mitra Driver di atas untuk menerima ordernya secara live!',
+          '${widget.instructor.name} (${widget.instructor.plateNumber}) telah menerima permintaan jadwal Anda.',
           textAlign: TextAlign.center,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, height: 1.45),
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5, height: 1.45),
         ),
         const SizedBox(height: 10),
       ],

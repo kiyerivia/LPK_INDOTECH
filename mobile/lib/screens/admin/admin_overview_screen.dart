@@ -21,70 +21,42 @@ class AdminOverviewScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Executive Violet-Indigo Futuristic Hero Card
+          // Matte CIJ Red LPK Overview Banner (Solid Doff, No Gradient)
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF4F46E5), Color(0xFF6366F1), Color(0xFF3B82F6)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.purple.withValues(alpha: 0.28),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
+            decoration: AppTheme.matteBanner(color: AppColors.primary, radius: 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.admin_panel_settings_rounded, color: Colors.white, size: 13),
-                          SizedBox(width: 5),
-                          Text('HQ ADMIN LPK', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-                        ],
-                      ),
+                      child: const Text('Admin LPK', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700)),
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.black.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.verified_rounded, color: Colors.white, size: 13),
-                          SizedBox(width: 4),
-                          Text('Beta Live', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-                        ],
-                      ),
+                      child: const Text('Aktif', style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                const Text('Total Omzet Pelatihan Bulan Ini', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const Text('Total Omzet Bulan Ini', style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(formatRupiah(monthlyOmzet), style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
                 const Text(
-                  'Model Ekosistem: LPK = Pusat Kurikulum & Sertifikasi • Mitra Driver = Pelatih Lapangan Tanpa Cabang Fisik',
-                  style: TextStyle(color: Colors.white70, fontSize: 11, height: 1.4),
+                  'LPK Citra Indotech Jaya',
+                  style: TextStyle(color: Colors.white70, fontSize: 11.5),
                 ),
               ],
             ),
@@ -94,7 +66,7 @@ class AdminOverviewScreen extends StatelessWidget {
 
           Row(
             children: [
-              _kpi('Mitra Aktif', '${appState.instructors.length} Driver', 'Tersertifikasi Rem Ganda', AppColors.emerald),
+              _kpi('Mitra Aktif', '${appState.instructors.length} Driver', 'Rem ganda terverifikasi', AppColors.emerald),
               const SizedBox(width: 10),
               _kpi('Siswa Aktif', '${appState.activeStudentCount} Siswa', '${appState.graduations.where((g) => g.approved).length} lulus sertifikat', AppColors.primary),
             ],
@@ -102,7 +74,7 @@ class AdminOverviewScreen extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              _kpi('Order Terpantau', '${appState.orders.length} Order', 'Live Dispatch Radar', AppColors.purple),
+              _kpi('Order Aktif', '${appState.orders.length} Order', 'Jadwal berjalan', AppColors.primaryDark),
               const SizedBox(width: 10),
               _kpi('Antrean KYC', '${appState.pendingMitras.where((m) => m.status == 'pending').length} Mitra', 'Menunggu verifikasi', AppColors.amber),
             ],
@@ -110,31 +82,31 @@ class AdminOverviewScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          const Text('Distribusi Smart Split Otomatis', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
+          const Text('Distribusi Bagi Hasil', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
           const SizedBox(height: 10),
           GlassCard(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 _splitBar(
-                  '1. Mitra Instruktur Lapangan (${appState.mitraSplitPercent}%)',
+                  'Mitra Instruktur (${appState.mitraSplitPercent}%)',
                   formatRupiah(mitraPayout),
                   appState.mitraSplitPercent / 100,
                   AppColors.emerald,
                 ),
                 const SizedBox(height: 12),
                 _splitBar(
-                  '2. Kas Operasional & Sertifikasi LPK (${appState.lpkSplitPercent}%)',
+                  'LPK (${appState.lpkSplitPercent}%)',
                   formatRupiah(lpkShare),
                   appState.lpkSplitPercent / 100,
-                  AppColors.purple,
+                  AppColors.primary,
                 ),
                 const SizedBox(height: 12),
                 _splitBar(
-                  '3. Platform, GPS & Asuransi (${appState.platformSplitPercent}%)',
+                  'Platform & Asuransi (${appState.platformSplitPercent}%)',
                   formatRupiah(platformShare),
                   appState.platformSplitPercent / 100,
-                  AppColors.primary,
+                  AppColors.amber,
                 ),
               ],
             ),

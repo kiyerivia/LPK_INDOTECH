@@ -59,15 +59,15 @@ class _MitraEvalScreenState extends State<MitraEvalScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const StatusPill(label: 'EVALUASI LAPANGAN', color: AppColors.emerald, icon: Icons.fact_check_rounded),
+                const StatusPill(label: 'Evaluasi Lapangan', color: AppColors.primary, icon: Icons.fact_check_rounded),
                 const SizedBox(height: 8),
-                const Text('Input Penilaian Siswa', style: TextStyle(color: AppColors.textPrimary, fontSize: 17, fontWeight: FontWeight.w800)),
+                const Text('Input Penilaian Siswa', style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Text(
                   widget.appState.orders.isEmpty
-                      ? 'Belum ada sesi siswa aktif • Nilai yang dikirim akan tersinkron ke Rapor Siswa & Admin LPK.'
-                      : 'Siswa: ${widget.appState.orders.first.studentName} • Nilai langsung tersinkron ke Rapor Siswa & diverifikasi Admin LPK.',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                      ? 'Belum ada sesi siswa aktif. Nilai yang dikirim akan masuk ke rapor siswa dan admin LPK.'
+                      : 'Siswa: ${widget.appState.orders.first.studentName}',
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5),
                 ),
                 const SizedBox(height: 14),
 

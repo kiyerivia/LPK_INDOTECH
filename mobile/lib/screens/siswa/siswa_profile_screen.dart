@@ -285,9 +285,9 @@ class SiswaProfileScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
           Text(
-            '${AppVersions.driving.fullLabel} • ${AppVersions.driving.releaseDate}',
+            AppVersions.driving.shortLabel,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w600),
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w500),
           ),
         ],
       ),

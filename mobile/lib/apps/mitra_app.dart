@@ -100,100 +100,80 @@ class _MitraAppShellState extends State<MitraAppShell> {
     }
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF2FBF9), Color(0xFFECF7F5), Color(0xFFF3F7FA)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -90,
-              left: -70,
-              child: Container(
-                width: 260,
-                height: 260,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [AppColors.emerald.withValues(alpha: 0.16), Colors.transparent],
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: KeyedSubtree(key: ValueKey('mitra-$_tab'), child: screen),
                   ),
                 ),
-              ),
+              ],
             ),
-            SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: KeyedSubtree(key: ValueKey('mitra-$_tab'), child: screen),
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NeonArchNavbar(
+              tabs: tabs,
+              currentIndex: _tab,
+              accentColor: AppColors.primary,
+              onTabSelected: (i) => setState(() => _tab = i),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: NeonArchNavbar(
-                tabs: tabs,
-                currentIndex: _tab,
-                accentColor: AppColors.emerald,
-                onTabSelected: (i) => setState(() => _tab = i),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: AppColors.emerald.withValues(alpha: 0.35), width: 1.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderSubtle),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF1F1D1A).withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Image.asset(
               'assets/logo.png',
               fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Icon(Icons.local_taxi_rounded, color: AppColors.emerald, size: 21),
+              errorBuilder: (_, _, _) => const Icon(Icons.local_taxi_rounded, color: AppColors.primary, size: 20),
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RichText(
-                  text: const TextSpan(
-                    text: 'CIJ ',
-                    style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w900, fontSize: 15),
-                    children: [
-                      TextSpan(text: 'PARTNER', style: TextStyle(color: AppColors.emerald)),
-                    ],
-                  ),
+                Text(
+                  'CIJ Mitra',
+                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 15.5),
                 ),
-                const Text(
-                  'Aplikasi Mitra Driver • Instruktur Lapangan',
+                Text(
+                  'Mitra Instruktur',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -203,21 +183,26 @@ class _MitraAppShellState extends State<MitraAppShell> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white, width: 1.2),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.borderSubtle),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1F1D1A).withValues(alpha: 0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.local_taxi_rounded, size: 14, color: AppColors.emerald),
-                  const SizedBox(width: 5),
                   Text(
                     _appState.userName.trim().isNotEmpty ? _appState.userName.trim().split(' ').first : 'Mitra',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800),
+                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11.5, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(width: 6),
-                  const Icon(Icons.logout_rounded, size: 14, color: AppColors.danger),
+                  const Icon(Icons.logout_rounded, size: 15, color: AppColors.danger),
                 ],
               ),
             ),

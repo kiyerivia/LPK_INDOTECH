@@ -30,25 +30,12 @@ class MitraOrderScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Elegant Teal-Emerald Driver Status Hero Card
+          // Matte CIJ Driver Status Banner (Solid Doff, No Gradient)
           Container(
             padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: appState.mitraIsOnline
-                    ? const [Color(0xFF0F766E), Color(0xFF0D9488), Color(0xFF14B8A6)]
-                    : const [Color(0xFF475569), Color(0xFF64748B)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: (appState.mitraIsOnline ? AppColors.emerald : AppColors.textMuted).withValues(alpha: 0.25),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
+            decoration: AppTheme.matteBanner(
+              color: appState.mitraIsOnline ? AppColors.primary : const Color(0xFF44403C),
+              radius: 18,
             ),
             child: Column(
               children: [
@@ -58,7 +45,7 @@ class MitraOrderScreen extends StatelessWidget {
                       initial: appState.userName.trim().isNotEmpty
                           ? appState.userName.trim().split(' ').take(2).map((w) => w[0].toUpperCase()).join()
                           : 'M',
-                      size: 48,
+                      size: 46,
                       online: appState.mitraIsOnline,
                     ),
                     const SizedBox(width: 12),
@@ -77,7 +64,7 @@ class MitraOrderScreen extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 6),
-                              const Icon(Icons.verified_rounded, color: Colors.white, size: 16),
+                              const Icon(Icons.verified_rounded, color: AppColors.navBarActiveIcon, size: 16),
                             ],
                           ),
                           const SizedBox(height: 2),
@@ -85,7 +72,7 @@ class MitraOrderScreen extends StatelessWidget {
                             appState.mitraCarInfo,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Colors.white70, fontSize: 11),
+                            style: const TextStyle(color: Colors.white70, fontSize: 11.5),
                           ),
                         ],
                       ),
@@ -96,16 +83,15 @@ class MitraOrderScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                    color: Colors.black.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     children: [
                       Icon(
                         appState.mitraIsOnline ? Icons.sensors_rounded : Icons.power_settings_new_rounded,
-                        color: Colors.white,
-                        size: 22,
+                        color: appState.mitraIsOnline ? AppColors.navBarActiveIcon : Colors.white70,
+                        size: 20,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
@@ -113,26 +99,26 @@ class MitraOrderScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              appState.mitraIsOnline ? 'ON BID • SIAGA TERIMA ORDER' : 'OFFLINE • ISTIRAHAT',
+                              appState.mitraIsOnline ? 'Online - Siap Terima Order' : 'Offline - Istirahat',
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12.5,
                               ),
                             ),
                             Text(
                               appState.mitraIsOnline
-                                  ? 'Radar aktif radius ${appState.mitraServiceRadius.toInt()} km (${appState.mitraServiceAreas.length} kecamatan)'
-                                  : 'Aktifkan untuk mulai menerima order pelatihan siswa',
-                              style: const TextStyle(color: Colors.white70, fontSize: 10),
+                                  ? 'Radius layanan ${appState.mitraServiceRadius.toInt()} km (${appState.mitraServiceAreas.length} area)'
+                                  : 'Aktifkan status online untuk menerima order pelatihan',
+                              style: const TextStyle(color: Colors.white70, fontSize: 10.5),
                             ),
                           ],
                         ),
                       ),
                       Switch(
                         value: appState.mitraIsOnline,
-                        activeThumbColor: AppColors.emerald,
-                        activeTrackColor: Colors.white,
+                        activeThumbColor: AppColors.primary,
+                        activeTrackColor: AppColors.navBarActiveIcon,
                         onChanged: appState.toggleMitraOnline,
                       ),
                     ],
@@ -171,7 +157,7 @@ class MitraOrderScreen extends StatelessWidget {
               padding: EdgeInsets.all(20),
               child: Center(
                 child: Text(
-                  'Status kamu sedang OFFLINE.\nAktifkan toggle ON BID di atas untuk menerima order siswa terdekat.',
+                  'Status Anda sedang offline.\nAktifkan status online di atas untuk menerima order siswa.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
@@ -182,7 +168,7 @@ class MitraOrderScreen extends StatelessWidget {
               padding: EdgeInsets.all(20),
               child: Center(
                 child: Text(
-                  'Belum ada order baru masuk.\nOrder yang dibuat di Mode Siswa otomatis muncul di sini!',
+                  'Belum ada order baru saat ini.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
                 ),
@@ -279,14 +265,14 @@ class MitraOrderScreen extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: NeonButton(
-                  label: 'TERIMA ORDER',
+                  label: 'Terima Order',
                   icon: Icons.check_circle_rounded,
                   color: AppColors.emerald,
                   onPressed: () {
                     appState.updateOrderStage(order.id, TripStage.accepted);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Order ${order.studentName} diterima! Siap menuju lokasi.'),
+                        content: Text('Order ${order.studentName} diterima.'),
                         backgroundColor: AppColors.emerald,
                       ),
                     );

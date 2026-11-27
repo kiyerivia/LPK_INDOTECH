@@ -242,9 +242,9 @@ class _AdminConfigScreenState extends State<AdminConfigScreen> {
           const SizedBox(height: 16),
           Center(
             child: Text(
-              '${AppVersions.console.fullLabel} • ${AppVersions.console.releaseDate}',
+              AppVersions.console.shortLabel,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w600),
+              style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w500),
             ),
           ),
         ],

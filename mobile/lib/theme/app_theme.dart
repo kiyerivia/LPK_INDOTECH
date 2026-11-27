@@ -1,92 +1,109 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Aurora Frost — Elegan, Futuristik & Nyaman di Mata
+/// CIJ Matte Red & Ochre-Yellow Theme
+/// Solid doff tones derived from the Citra Indotech Jaya logo with soft elevation shadows.
 class AppColors {
-  // Primary Futuristic Mobility Blue-Cyan
-  static const Color primary = Color(0xFF2563EB); // Electric Royal Blue
-  static const Color primaryLight = Color(0xFF0EA5E9); // Futuristic Sky Cyan
-  static const Color primaryGlow = Color(0xFF38BDF8); // Soft Cyan Neon
-  static const Color primaryDark = Color(0xFF1D4ED8); // Deep Sapphire
+  // Primary CIJ Matte Red & Warm Ochre Yellow (Doff)
+  static const Color primary = Color(0xFFB3302A); // Matte CIJ Crimson Red
+  static const Color primaryLight = Color(0xFFC98A1C); // Matte CIJ Warm Ochre Yellow
+  static const Color primaryGlow = Color(0xFFE0B23B); // Soft Matte Gold Accent
+  static const Color primaryDark = Color(0xFF8C231E); // Deep Matte Burgundy Red
 
-  // Soft Pearl / Ice Glass Surfaces (Eye-Friendly, Zero Glare)
-  static const Color background = Color(0xFFF2F6FC); // Cool Pearl Canvas
-  static const Color backgroundAlt = Color(0xFFE8F0FA); // Soft Ice Blue Tint
-  static const Color surface = Color(0xFFFFFFFF); // Frosted Glass Base
-  static const Color surfaceElevated = Color(
-    0xFFF8FAFF,
-  ); // Subtle Elevated Card
-  static const Color borderSubtle = Color(0xFFDCE6F4); // Crisp Glass Border
+  // Bottom Navigation Bar — Solid Matte Reddish-Yellow (Terracotta Doff, No Gradient)
+  static const Color navBarBg = Color(0xFFA83E2B);
+  static const Color navBarBubble = Color(0xFF8C3121);
+  static const Color navBarActiveIcon = Color(0xFFF3C64F);
 
-  // High-Comfort Typography (Deep Slate, Never Harsh Pure Black)
-  static const Color textPrimary = Color(0xFF0F172A); // Deep Slate Navy
-  static const Color textSecondary = Color(0xFF475569); // Calm Slate Gray
-  static const Color textMuted = Color(0xFF64748B); // Soft Metadata Gray
+  // Warm Neutral Matte Paper Surfaces
+  static const Color background = Color(0xFFF6F4F0);
+  static const Color backgroundAlt = Color(0xFFEDEAE3);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceElevated = Color(0xFFFAF9F6);
+  static const Color borderSubtle = Color(0xFFE3DDD4);
 
-  // Semantic Futuristic Accents
-  static const Color emerald = Color(
-    0xFF0D9488,
-  ); // Refined Teal-Emerald (Mitra)
-  static const Color amber = Color(0xFFD97706); // Warm Gold-Amber
-  static const Color blue = Color(0xFF2563EB); // Electric Blue
-  static const Color purple = Color(
-    0xFF6366F1,
-  ); // Futuristic Indigo-Violet (Admin)
-  static const Color danger = Color(
-    0xFFE11D48,
-  ); // Soft Crimson (for alerts/logout)
+  // Typography (Warm Charcoal)
+  static const Color textPrimary = Color(0xFF1F1D1A);
+  static const Color textSecondary = Color(0xFF57534E);
+  static const Color textMuted = Color(0xFF78716C);
+
+  // Semantic Matte Accents
+  static const Color emerald = Color(0xFF2E7D5B); // Matte Forest Green
+  static const Color amber = Color(0xFFC98A1C); // Matte Ochre Gold
+  static const Color blue = Color(0xFFB3302A); // Unified with CIJ Matte Red
+  static const Color purple = Color(0xFF8C231E); // Deep Matte Crimson (Admin)
+  static const Color danger = Color(0xFFB91C1C); // Matte Red Alert
 }
 
 class AppTheme {
   static BoxDecoration glassCard({
-    double opacity = 0.82,
-    double borderOpacity = 0.9,
-    double radius = 22,
+    double opacity = 1.0,
+    double borderOpacity = 1.0,
+    double radius = 16,
     Color? borderColor,
   }) {
     return BoxDecoration(
-      color: Colors.white.withValues(alpha: opacity),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(radius),
       border: Border.all(
-        color: borderColor ?? Colors.white.withValues(alpha: borderOpacity),
-        width: 1.2,
+        color: borderColor ?? AppColors.borderSubtle,
+        width: 1,
       ),
       boxShadow: [
         BoxShadow(
-          color: const Color(0xFF1E3A8A).withValues(alpha: 0.06),
-          blurRadius: 22,
-          offset: const Offset(0, 8),
+          color: const Color(0xFF1F1D1A).withValues(alpha: 0.06),
+          blurRadius: 14,
+          offset: const Offset(0, 4),
         ),
         BoxShadow(
-          color: Colors.white.withValues(alpha: 0.7),
-          blurRadius: 2,
-          offset: const Offset(0, -1),
+          color: const Color(0xFF1F1D1A).withValues(alpha: 0.03),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
         ),
       ],
     );
   }
 
   static BoxDecoration glassCardHighlight({
-    double radius = 22,
+    double radius = 16,
     Color color = AppColors.primary,
   }) {
     return BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Colors.white.withValues(alpha: 0.92),
-          color.withValues(alpha: 0.09),
-        ],
-      ),
+      color: Colors.white,
       borderRadius: BorderRadius.circular(radius),
-      border: Border.all(color: color.withValues(alpha: 0.32), width: 1.3),
+      border: Border.all(color: color.withValues(alpha: 0.42), width: 1.3),
       boxShadow: [
         BoxShadow(
-          color: color.withValues(alpha: 0.14),
-          blurRadius: 24,
-          spreadRadius: -4,
-          offset: const Offset(0, 10),
+          color: color.withValues(alpha: 0.12),
+          blurRadius: 16,
+          offset: const Offset(0, 5),
+        ),
+        BoxShadow(
+          color: const Color(0xFF1F1D1A).withValues(alpha: 0.04),
+          blurRadius: 4,
+          offset: const Offset(0, 1),
+        ),
+      ],
+    );
+  }
+
+  static BoxDecoration matteBanner({
+    Color color = AppColors.primary,
+    double radius = 20,
+  }) {
+    return BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(radius),
+      boxShadow: [
+        BoxShadow(
+          color: color.withValues(alpha: 0.28),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
+        ),
+        BoxShadow(
+          color: const Color(0xFF1F1D1A).withValues(alpha: 0.12),
+          blurRadius: 6,
+          offset: const Offset(0, 2),
         ),
       ],
     );
@@ -136,8 +153,10 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: Colors.white,
+          elevation: 2,
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
           ),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
@@ -145,18 +164,18 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.85),
+        fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.borderSubtle),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.borderSubtle),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.6),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         labelStyle: const TextStyle(
           color: AppColors.textSecondary,

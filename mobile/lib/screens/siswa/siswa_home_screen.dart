@@ -30,29 +30,11 @@ class SiswaHomeScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Elegant Futuristic Gradient Hero Card (Soft Indigo → Electric Sky Blue)
+          // Matte CIJ Red Hero Banner (Solid Doff, No Gradient)
           Container(
-            margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            margin: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF1D4ED8), // Deep Royal Blue
-                  Color(0xFF2563EB), // Electric Blue
-                  Color(0xFF0EA5E9), // Futuristic Sky Cyan
-                ],
-              ),
-              borderRadius: BorderRadius.circular(26),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.28),
-                  blurRadius: 28,
-                  offset: const Offset(0, 12),
-                ),
-              ],
-            ),
+            decoration: AppTheme.matteBanner(color: AppColors.primary, radius: 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -64,25 +46,24 @@ class SiswaHomeScreen extends StatelessWidget {
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
+                            color: Colors.black.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Icon(Icons.my_location_rounded, color: Colors.white, size: 13),
+                              const Icon(Icons.location_on_rounded, color: AppColors.navBarActiveIcon, size: 14),
                               const SizedBox(width: 5),
                               Flexible(
                                 child: Text(
                                   appState.studentLocation,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                                  style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
                                 ),
                               ),
                               const SizedBox(width: 3),
-                              const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 14),
+                              const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 15),
                             ],
                           ),
                         ),
@@ -90,41 +71,37 @@ class SiswaHomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.18),
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.verified_rounded, color: Colors.white, size: 12),
-                          SizedBox(width: 4),
-                          Text('LPK Resmi', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
-                        ],
+                      child: const Text(
+                        'LPK Resmi',
+                        style: TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Halo, ${appState.userName.trim().isNotEmpty ? appState.userName.trim().split(' ').first : 'Siswa'}!',
+                  'Halo, ${appState.userName.trim().isNotEmpty ? appState.userName.trim().split(' ').first : 'Siswa'}',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 13, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Pesan Instruktur Mengemudi\nTerdekat Seperti Ojol',
+                  'Pesan Instruktur Mengemudi\nTerdekat di Sekitar Anda',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 21,
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    height: 1.22,
+                    height: 1.25,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '${activeDrivers.length} mitra driver terverifikasi rem ganda aktif di radius 3–10 km dari lokasimu.',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontSize: 12, height: 1.4),
+                  '${activeDrivers.length} instruktur bersertifikat rem ganda tersedia dalam radius 3-10 km.',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.88), fontSize: 12, height: 1.4),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -134,13 +111,14 @@ class SiswaHomeScreen extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
                       foregroundColor: AppColors.primary,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      elevation: 2,
+                      shadowColor: Colors.black.withValues(alpha: 0.18),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.radar_rounded, size: 18),
                     label: const Text(
-                      'Cari Instruktur Terdekat (Radar GPS)',
+                      'Cari Instruktur Terdekat',
                       style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
                     ),
                   ),
@@ -149,19 +127,18 @@ class SiswaHomeScreen extends StatelessWidget {
             ),
           ),
 
-          // Alur Kursus → SIM A Strip
-          const SectionHeader(title: 'Alur Driving Partner LPK'),
+          const SectionHeader(title: 'Tahapan Pelatihan'),
           SizedBox(
-            height: 76,
+            height: 74,
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: [
-                _flowChip('1. Lokasi', 'Radius 3-10km', Icons.radar_rounded, false, onOpenSearch),
-                _flowChip('2. Booking', '${appState.orders.length} Order', Icons.calendar_today_rounded, appState.orders.isNotEmpty, onOpenSchedule),
-                _flowChip('3. Latihan', '$completedModules/5 Modul', Icons.directions_car_rounded, completedModules > 0, onOpenSchedule),
-                _flowChip('4. Ujian & Sertifikat', completedModules > 0 ? 'Nilai ${appState.studentAvgScore.toStringAsFixed(0)}' : 'Belum ada nilai', Icons.workspace_premium_rounded, appState.studentCertApproved, onOpenReport),
-                _flowChip('5. Proses SIM A', 'Satpas Banyumas', Icons.badge_rounded, false, onOpenReport),
+                _flowChip('Lokasi', 'Radius 3-10 km', Icons.radar_rounded, false, onOpenSearch),
+                _flowChip('Booking', '${appState.orders.length} Order', Icons.calendar_today_rounded, appState.orders.isNotEmpty, onOpenSchedule),
+                _flowChip('Latihan', '$completedModules/5 Modul', Icons.directions_car_rounded, completedModules > 0, onOpenSchedule),
+                _flowChip('Sertifikat', completedModules > 0 ? 'Nilai ${appState.studentAvgScore.toStringAsFixed(0)}' : 'Belum ada nilai', Icons.workspace_premium_rounded, appState.studentCertApproved, onOpenReport),
+                _flowChip('Proses SIM A', 'Satpas Banyumas', Icons.badge_rounded, false, onOpenReport),
               ],
             ),
           ),
@@ -392,8 +369,8 @@ class SiswaHomeScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              '✓ $f',
-                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 10, fontWeight: FontWeight.w600),
+                              f,
+                              style: const TextStyle(color: AppColors.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w600),
                             ),
                           );
                         }).toList(),
@@ -456,34 +433,53 @@ class SiswaHomeScreen extends StatelessWidget {
   void _pickArea(BuildContext context) {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       backgroundColor: AppColors.surface,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (_) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Pilih Area Lokasi Kamu (Purwokerto)', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 12),
-            ...appState.serviceAreas.where((a) => a.active).map((area) {
-              final selected = appState.studentLocation == area.name;
-              return ListTile(
-                dense: true,
-                leading: Icon(
-                  Icons.location_on_rounded,
-                  color: selected ? AppColors.emerald : AppColors.textMuted,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.72),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 38,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: AppColors.borderSubtle,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
                 ),
-                title: Text(area.name, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
-                subtitle: Text('${area.activeDrivers} mitra driver aktif', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
-                trailing: selected ? const Icon(Icons.check_circle, color: AppColors.emerald) : null,
-                onTap: () {
-                  appState.setStudentLocation(area.name);
-                  Navigator.pop(context);
-                },
-              );
-            }),
-          ],
+                const Text('Pilih Area Lokasi', style: TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
+                const SizedBox(height: 10),
+                ...appState.serviceAreas.where((a) => a.active).map((area) {
+                  final selected = appState.studentLocation == area.name;
+                  return ListTile(
+                    dense: true,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    leading: Icon(
+                      Icons.location_on_rounded,
+                      color: selected ? AppColors.primary : AppColors.textMuted,
+                    ),
+                    title: Text(area.name, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700)),
+                    subtitle: Text('${area.activeDrivers} mitra driver aktif', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                    trailing: selected ? const Icon(Icons.check_circle_rounded, color: AppColors.emerald) : null,
+                    onTap: () {
+                      appState.setStudentLocation(area.name);
+                      Navigator.pop(ctx);
+                    },
+                  );
+                }),
+              ],
+            ),
+          ),
         ),
       ),
     );

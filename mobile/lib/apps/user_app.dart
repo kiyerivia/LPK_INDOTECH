@@ -127,133 +127,82 @@ class _UserAppShellState extends State<UserAppShell> {
     }
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFF6F9FF), Color(0xFFEDF4FD), Color(0xFFF3F6FC)],
-          ),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -90,
-              left: -70,
-              child: Container(
-                width: 260,
-                height: 260,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [AppColors.primary.withValues(alpha: 0.16), Colors.transparent],
+      backgroundColor: AppColors.background,
+      body: Stack(
+        children: [
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: KeyedSubtree(key: ValueKey('user-$_tab'), child: screen),
                   ),
                 ),
-              ),
+              ],
             ),
-            SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  _buildHeader(),
-                  Expanded(
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 220),
-                      child: KeyedSubtree(key: ValueKey('user-$_tab'), child: screen),
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: NeonArchNavbar(
+              tabs: tabs,
+              currentIndex: _tab,
+              accentColor: AppColors.primary,
+              onTabSelected: (i) => setState(() => _tab = i),
             ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: NeonArchNavbar(
-                tabs: tabs,
-                currentIndex: _tab,
-                accentColor: AppColors.primary,
-                onTabSelected: (i) => setState(() => _tab = i),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(13),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.28), width: 1.2),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.borderSubtle),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.14),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: const Color(0xFF1F1D1A).withValues(alpha: 0.06),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: Image.asset(
               'assets/logo.png',
               fit: BoxFit.contain,
-              errorBuilder: (_, _, _) => const Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 21),
+              errorBuilder: (_, _, _) => const Icon(Icons.directions_car_rounded, color: AppColors.primary, size: 20),
             ),
           ),
           const SizedBox(width: 10),
-          Expanded(
+          const Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                RichText(
-                  text: const TextSpan(
-                    text: 'CIJ ',
-                    style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w900, fontSize: 15),
-                    children: [
-                      TextSpan(text: 'DRIVING', style: TextStyle(color: AppColors.primary)),
-                    ],
-                  ),
+                Text(
+                  'CIJ Driving',
+                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 15.5),
                 ),
-                const Text(
-                  'Aplikasi Konsumen • Kursus Mengemudi',
+                Text(
+                  'Kursus Mengemudi',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w500),
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
                 ),
               ],
-            ),
-          ),
-          GestureDetector(
-            onTap: _logout,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.9),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white, width: 1.2),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.school_rounded, size: 14, color: AppColors.primary),
-                  const SizedBox(width: 5),
-                  Text(
-                    _appState.userName.trim().isNotEmpty ? _appState.userName.trim().split(' ').first : 'Siswa',
-                    style: const TextStyle(color: AppColors.textPrimary, fontSize: 11, fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(width: 6),
-                  const Icon(Icons.logout_rounded, size: 14, color: AppColors.danger),
-                ],
-              ),
             ),
           ),
         ],

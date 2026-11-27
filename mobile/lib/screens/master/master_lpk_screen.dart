@@ -54,13 +54,13 @@ class MasterLpkScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('${lpk.id} • ${lpk.city}', style: const TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.w700)),
+                            Text('${lpk.id} - ${lpk.city}', style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5, fontWeight: FontWeight.w600)),
                             Text(lpk.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w800)),
                           ],
                         ),
                       ),
                       StatusPill(
-                        label: isVerified ? 'TERVERIFIKASI' : isPending ? 'MENUNGGU MASTER' : 'DITANGGUHKAN',
+                        label: isVerified ? 'Terverifikasi' : isPending ? 'Menunggu' : 'Ditangguhkan',
                         color: isVerified ? AppColors.emerald : isPending ? AppColors.amber : AppColors.danger,
                       ),
                     ],
@@ -68,7 +68,7 @@ class MasterLpkScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   InfoRow(icon: Icons.verified_user_rounded, label: 'No. Izin Kemnaker', value: lpk.licenseNumber),
                   InfoRow(icon: Icons.person_outline_rounded, label: 'Penanggung Jawab', value: '${lpk.ownerName} (${lpk.ownerPhone})'),
-                  InfoRow(icon: Icons.analytics_outlined, label: 'Skala Operasional', value: '${lpk.activeDrivers} Mitra • ${lpk.activeStudents} Siswa'),
+                  InfoRow(icon: Icons.analytics_outlined, label: 'Operasional', value: '${lpk.activeDrivers} Mitra, ${lpk.activeStudents} Siswa'),
                   const SizedBox(height: 12),
                   Row(
                     children: [

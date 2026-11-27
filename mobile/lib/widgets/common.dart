@@ -15,9 +15,9 @@ class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
     required this.child,
-    this.opacity = 0.84,
-    this.borderOpacity = 0.95,
-    this.radius = 22,
+    this.opacity = 1.0,
+    this.borderOpacity = 1.0,
+    this.radius = 16,
     this.padding,
     this.margin,
     this.highlight = false,
@@ -76,9 +76,9 @@ class NeonButton extends StatelessWidget {
           onPressed: onPressed,
           style: OutlinedButton.styleFrom(
             foregroundColor: color,
-            backgroundColor: color.withValues(alpha: 0.06),
+            backgroundColor: Colors.white,
             side: BorderSide(color: color.withValues(alpha: 0.45), width: 1.2),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 18),
           ),
           child: Row(
@@ -104,29 +104,25 @@ class NeonButton extends StatelessWidget {
     }
 
     final disabled = onPressed == null;
-    final secondTone = color == AppColors.primary
-        ? AppColors.primaryLight
-        : Color.lerp(color, Colors.cyanAccent, 0.18)!;
 
     return SizedBox(
       width: width,
       child: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: disabled
-                ? [const Color(0xFFCBD5E1), const Color(0xFFCBD5E1)]
-                : [color, secondTone],
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-          ),
-          borderRadius: BorderRadius.circular(14),
+          color: disabled ? const Color(0xFFD6D3CD) : color,
+          borderRadius: BorderRadius.circular(12),
           boxShadow: disabled
               ? null
               : [
                   BoxShadow(
-                    color: color.withValues(alpha: 0.30),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+                    color: color.withValues(alpha: 0.24),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                  BoxShadow(
+                    color: const Color(0xFF1F1D1A).withValues(alpha: 0.08),
+                    blurRadius: 4,
+                    offset: const Offset(0, 1),
                   ),
                 ],
         ),
@@ -136,7 +132,7 @@ class NeonButton extends StatelessWidget {
             backgroundColor: Colors.transparent,
             shadowColor: Colors.transparent,
             disabledBackgroundColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
           ),
           child: Row(
@@ -184,9 +180,9 @@ class StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withValues(alpha: 0.32)),
+        color: color.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -199,9 +195,8 @@ class StatusPill extends StatelessWidget {
             label,
             style: TextStyle(
               color: color,
-              fontSize: 10,
+              fontSize: 10.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -230,17 +225,13 @@ class AvatarInitial extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [AppColors.primary, AppColors.primaryLight],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(size * 0.32),
+            color: AppColors.primary,
+            borderRadius: BorderRadius.circular(size * 0.28),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withValues(alpha: 0.22),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: AppColors.primary.withValues(alpha: 0.20),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -262,7 +253,7 @@ class AvatarInitial extends StatelessWidget {
               width: size * 0.28,
               height: size * 0.28,
               decoration: BoxDecoration(
-                color: const Color(0xFF10B981),
+                color: AppColors.emerald,
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
               ),
@@ -288,7 +279,7 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

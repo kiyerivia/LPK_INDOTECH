@@ -21,40 +21,26 @@ class MitraWalletScreen extends StatelessWidget {
         children: [
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF0F766E), Color(0xFF0D9488), Color(0xFF14B8A6)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.emerald.withValues(alpha: 0.28),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
+            decoration: AppTheme.matteBanner(color: AppColors.navBarBg, radius: 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 18),
+                    Icon(Icons.account_balance_wallet_rounded, color: AppColors.navBarActiveIcon, size: 18),
                     SizedBox(width: 6),
-                    Text('Dompet Insentif Mitra LPK', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
+                    Text('Dompet Insentif Mitra', style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Text(
                   formatRupiah(appState.mitraWalletBalance),
-                  style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w900),
+                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Smart Split ${appState.mitraSplitPercent}% otomatis cair ke saldo setelah sesi selesai',
-                  style: const TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600),
+                  'Bagi hasil ${appState.mitraSplitPercent}% masuk otomatis setelah sesi selesai',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w500),
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
@@ -65,13 +51,16 @@ class MitraWalletScreen extends StatelessWidget {
                         : null,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
-                      foregroundColor: AppColors.emerald,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                      foregroundColor: AppColors.primary,
+                      disabledBackgroundColor: Colors.white.withValues(alpha: 0.72),
+                      disabledForegroundColor: AppColors.textMuted,
+                      elevation: 2,
+                      shadowColor: Colors.black.withValues(alpha: 0.16),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     icon: const Icon(Icons.outbox_rounded, size: 18),
-                    label: const Text('Tarik Saldo ke Rekening / E-Wallet', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
+                    label: const Text('Tarik Saldo', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 13)),
                   ),
                 ),
               ],

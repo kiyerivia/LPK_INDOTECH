@@ -27,66 +27,45 @@ class MasterOverviewScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Executive Red-Gold Master Hero Banner
+          // Matte Deep Crimson Master Banner (Solid Doff, No Gradient)
           Container(
             padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFFB91C1C), Color(0xFFDC2626), Color(0xFFD97706)],
-              ),
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFDC2626).withValues(alpha: 0.28),
-                  blurRadius: 24,
-                  offset: const Offset(0, 10),
-                ),
-              ],
-            ),
+            decoration: AppTheme.matteBanner(color: AppColors.primaryDark, radius: 18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        color: AppColors.primaryLight,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.workspace_premium_rounded, color: Colors.white, size: 13),
-                          SizedBox(width: 5),
-                          Text('MASTER INDOTECH HQ', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
-                        ],
-                      ),
+                      child: const Text('MASTER INDOTECH HQ', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
                     ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.black.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
                         '$verifiedLpks LPK Aktif',
-                        style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                        style: const TextStyle(color: Colors.white, fontSize: 10.5, fontWeight: FontWeight.w700),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 14),
-                const Text('Total Omzet Ekosistem Nasional (Seluruh LPK)', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                const Text('Total Omzet Nasional', style: TextStyle(color: Colors.white70, fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(formatRupiah(totalOmzet), style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 6),
                 Text(
-                  'Pendapatan Fee Platform INDOTECH (${appState.platformSplitPercent}%): ${formatRupiah(platformFee)} / bulan',
-                  style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w700),
+                  'Fee platform INDOTECH (${appState.platformSplitPercent}%): ${formatRupiah(platformFee)} / bulan',
+                  style: const TextStyle(color: Colors.white70, fontSize: 11.5, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -174,14 +153,14 @@ class MasterOverviewScreen extends StatelessWidget {
                       children: [
                         Text(lpk.name, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 13)),
                         const SizedBox(height: 2),
-                        Text('${lpk.city} • ${lpk.activeDrivers} Mitra • ${lpk.activeStudents} Siswa', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
+                        Text('${lpk.city} - ${lpk.activeDrivers} Mitra, ${lpk.activeStudents} Siswa', style: const TextStyle(color: AppColors.textMuted, fontSize: 11)),
                         const SizedBox(height: 3),
                         Text('Omzet: ${formatRupiah(lpk.monthlyOmzet)}', style: const TextStyle(color: AppColors.emerald, fontWeight: FontWeight.w700, fontSize: 11)),
                       ],
                     ),
                   ),
                   StatusPill(
-                    label: isVerified ? 'TERVERIFIKASI' : lpk.status == 'pending' ? 'PENDING' : 'SUSPEND',
+                    label: isVerified ? 'Terverifikasi' : lpk.status == 'pending' ? 'Pending' : 'Ditangguhkan',
                     color: isVerified ? AppColors.emerald : lpk.status == 'pending' ? AppColors.amber : AppColors.danger,
                   ),
                 ],

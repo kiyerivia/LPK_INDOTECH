@@ -95,15 +95,15 @@ class _BiometricSecurityCardState extends State<BiometricSecurityCard> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Keamanan Sidik Jari (Biometrik)',
-                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w800, fontSize: 13),
+                  'Login Sidik Jari',
+                  style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w700, fontSize: 13.5),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   active
-                      ? 'Aktif • Terkunci ke sensor perangkat untuk ${widget.appState.userName}'
-                      : 'Aktifkan verifikasi sidik jari / Windows Hello untuk login aman',
-                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+                      ? 'Aktif untuk ${widget.appState.userName}'
+                      : 'Aktifkan sidik jari untuk masuk lebih cepat',
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5),
                 ),
               ],
             ),
