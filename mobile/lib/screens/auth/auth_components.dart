@@ -53,46 +53,66 @@ class AuthComponents {
     required String hint,
     required Color accentColor,
     required Color borderTint,
-    Color fillColor = const Color(0xFFFFFBF7),
+    Color fillColor = const Color(0xFFFFFFFF),
     IconData? prefixIcon,
     bool obscure = false,
+    bool enabled = true,
+    int? maxLength,
     Widget? suffix,
     TextInputType? keyboardType,
     ValueChanged<String>? onSubmitted,
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: fillColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: borderTint.withValues(alpha: 0.6), width: 1.2),
-        boxShadow: [
-          BoxShadow(
-            color: borderTint.withValues(alpha: 0.28),
-            offset: const Offset(0, 3),
-            blurRadius: 8,
-            spreadRadius: -2,
-          ),
-        ],
+        color: enabled ? fillColor : const Color(0xFFF3F4F6),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: enabled ? borderTint.withValues(alpha: 0.75) : const Color(0xFFE5E7EB),
+          width: 1.1,
+        ),
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.04),
+                  offset: const Offset(0, 2),
+                  blurRadius: 6,
+                ),
+              ]
+            : null,
       ),
       child: TextField(
         controller: controller,
+        enabled: enabled,
         obscureText: obscure,
+        maxLength: maxLength,
         keyboardType: keyboardType,
         onSubmitted: onSubmitted,
-        style: const TextStyle(
-          color: textMain,
+        style: TextStyle(
+          color: enabled ? textMain : textMuted,
           fontSize: 13.5,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w500,
         ),
         decoration: InputDecoration(
+          filled: false,
+          counterText: '',
           hintText: hint,
-          hintStyle: TextStyle(color: textMuted.withValues(alpha: 0.72), fontSize: 12.5),
+          hintStyle: TextStyle(color: textMuted.withValues(alpha: 0.65), fontSize: 13),
           prefixIcon: prefixIcon != null
-              ? Icon(prefixIcon, size: 19, color: accentColor.withValues(alpha: 0.85))
+              ? Icon(
+                  prefixIcon,
+                  size: 19,
+                  color: enabled ? accentColor.withValues(alpha: 0.8) : textMuted.withValues(alpha: 0.5),
+                )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          focusedErrorBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
           suffixIcon: suffix,
+          suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 0),
         ),
       ),
     );
@@ -171,9 +191,9 @@ class AuthComponents {
       textAlign: TextAlign.center,
       style: const TextStyle(
         color: textMain,
-        fontSize: 21,
-        fontWeight: FontWeight.w900,
-        letterSpacing: 0.3,
+        fontSize: 20,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0.2,
       ),
     );
   }
@@ -360,39 +380,38 @@ class AuthComponents {
           GestureDetector(
             onTap: onTap,
             child: Container(
-              width: 64,
-              height: 64,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
                 border: Border.all(
-                  color: bioActive ? AppColors.emerald : ringColor,
-                  width: 2.3,
+                  color: bioActive ? AppColors.emerald : const Color(0xFFE2E8F0),
+                  width: 1.5,
                 ),
                 boxShadow: [
-                  const BoxShadow(color: Colors.white, offset: Offset(-4, -4), blurRadius: 10),
                   BoxShadow(
-                    color: (bioActive ? AppColors.emerald : primaryColor).withValues(alpha: 0.22),
-                    offset: const Offset(4, 6),
-                    blurRadius: 14,
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+                    offset: const Offset(0, 4),
+                    blurRadius: 12,
                   ),
                 ],
               ),
               child: Icon(
                 Icons.fingerprint_rounded,
-                size: 38,
+                size: 30,
                 color: bioActive ? AppColors.emerald : primaryColor,
               ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            bioActive ? 'Sidik jari aktif: $activeName' : 'Masuk cepat dengan Sidik Jari (Biometrik)',
+            bioActive ? 'Sidik jari: $activeName' : 'Masuk dengan Sidik Jari',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: bioActive ? AppColors.emerald : textMuted,
-              fontSize: 10.5,
-              fontWeight: bioActive ? FontWeight.w700 : FontWeight.w500,
+              fontSize: 11.5,
+              fontWeight: bioActive ? FontWeight.w600 : FontWeight.w500,
             ),
           ),
         ],
@@ -535,6 +554,186 @@ class AuthComponents {
           ),
         ),
       ],
+    );
+  }
+
+  /// Inline OTP status suffix: crisp green checkmark when verified, or compact "Kirim OTP" action button.
+  static Widget otpFieldSuffix({
+    required bool verified,
+    required bool sending,
+    required bool enabled,
+    required Color accentColor,
+    required VoidCallback onSendOtp,
+    VoidCallback? onChangeTarget,
+  }) {
+    if (verified) {
+      return Padding(
+        padding: const EdgeInsets.only(right: 12),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: AppColors.emerald, size: 20),
+            if (onChangeTarget != null) ...[
+              const SizedBox(width: 6),
+              GestureDetector(
+                onTap: onChangeTarget,
+                child: const Text(
+                  'Ubah',
+                  style: TextStyle(color: textMuted, fontSize: 11, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    if (!enabled) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Center(
+        widthFactor: 1.0,
+        child: GestureDetector(
+          onTap: sending ? null : onSendOtp,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: accentColor.withValues(alpha: 0.45)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.06),
+                  offset: const Offset(0, 2),
+                  blurRadius: 4,
+                ),
+              ],
+            ),
+            child: Text(
+              sending ? 'Mengirim...' : 'Kirim OTP',
+              style: TextStyle(
+                color: sending ? textMuted : accentColor,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Inline 6-digit OTP verification box displayed directly under WhatsApp or Email field
+  static Widget otpVerifyBox({
+    required String title,
+    required TextEditingController otpController,
+    required Color accentColor,
+    required Color borderTint,
+    required bool verifying,
+    required bool resending,
+    String? sandboxCode,
+    required VoidCallback onVerify,
+    required VoidCallback onResend,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(color: textMain, fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+              ),
+              GestureDetector(
+                onTap: resending ? null : onResend,
+                child: Text(
+                  resending ? 'Mengirim...' : 'Kirim ulang',
+                  style: TextStyle(color: accentColor, fontSize: 11.5, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          if (sandboxCode != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Kode OTP uji coba: $sandboxCode',
+              style: const TextStyle(color: AppColors.emerald, fontSize: 11.5, fontWeight: FontWeight.w700),
+            ),
+          ],
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFD1D5DB)),
+                  ),
+                  child: TextField(
+                    controller: otpController,
+                    maxLength: 6,
+                    keyboardType: TextInputType.number,
+                    style: const TextStyle(
+                      color: textMain,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 4,
+                    ),
+                    textAlign: TextAlign.center,
+                    decoration: const InputDecoration(
+                      filled: false,
+                      counterText: '',
+                      hintText: '6 digit kode',
+                      hintStyle: TextStyle(color: textMuted, fontSize: 12.5, letterSpacing: 0.3),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: verifying ? null : onVerify,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.12),
+                        offset: const Offset(0, 3),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    verifying ? '...' : 'Verifikasi',
+                    style: const TextStyle(color: textMain, fontSize: 12.5, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

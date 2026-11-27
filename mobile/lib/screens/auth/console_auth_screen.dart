@@ -3,18 +3,14 @@ import '../../config/app_version.dart';
 import '../../models/app_models.dart';
 import '../../services/auth_service.dart';
 import '../../services/biometric_service.dart';
+import '../../services/otp_service.dart';
 import '../../theme/app_theme.dart';
 import 'auth_components.dart';
 
 enum _ConsoleAuthMode { login, registerLpk, forgot }
 
-/// Dedicated Executive Login & LPK Branch Registration Dashboard for App 3:
-/// CIJ Command Center (`cij-console.vercel.app`)
-/// Visual Identity: Bright Executive Crimson–Royal Indigo–Gold split-screen on desktop, stacked on mobile.
-/// Supports:
-///   1. INDOTECH (Master) Login
-///   2. LPK (Super Admin) Login
-///   3. New LPK Branch Application (requires verification by MASTER INDOTECH)
+/// Dedicated Executive Login & Sequential Dual-OTP LPK Registration Dashboard for App 3:
+/// CIJ Master (`cij-console.vercel.app`)
 class ConsoleAuthScreen extends StatefulWidget {
   final AppState appState;
   final VoidCallback onAuthenticated;
@@ -35,13 +31,26 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
   bool _loading = false;
   bool _resending = false;
   bool _resetSent = false;
-  bool _lpkSubmitted = false;
   int _failedAttempts = 0;
   String? _error;
-  String? _resendInfo;
+  String? _infoBanner;
   String? _pendingEmail;
-  String _submittedLpkName = '';
   BiometricBinding? _enrolledBiometric;
+
+  // Sequential Dual-OTP states for LPK Registration
+  bool _phoneOtpSent = false;
+  bool _phoneVerified = false;
+  bool _sendingPhoneOtp = false;
+  bool _verifyingPhoneOtp = false;
+  String? _phoneSandboxCode;
+  String _verifiedPhone = '';
+
+  bool _emailOtpSent = false;
+  bool _emailVerified = false;
+  bool _sendingEmailOtp = false;
+  bool _verifyingEmailOtp = false;
+  String? _emailSandboxCode;
+  String _verifiedEmail = '';
 
   final _idCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
@@ -50,12 +59,14 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
   final _licenseCtrl = TextEditingController();
   final _ownerNameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
+  final _phoneOtpCtrl = TextEditingController();
+  final _regEmailCtrl = TextEditingController();
+  final _emailOtpCtrl = TextEditingController();
   final _resetCtrl = TextEditingController();
 
   static const Color _crimson = Color(0xFFB91C1C);
   static const Color _indigo = Color(0xFF4338CA);
   static const Color _indigoBright = Color(0xFF6366F1);
-  static const Color _gold = Color(0xFFD97706);
   static const Color _indigoBorder = Color(0xFFC7D2FE);
 
   @override
@@ -78,14 +89,36 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     _licenseCtrl.dispose();
     _ownerNameCtrl.dispose();
     _phoneCtrl.dispose();
+    _phoneOtpCtrl.dispose();
+    _regEmailCtrl.dispose();
+    _emailOtpCtrl.dispose();
     _resetCtrl.dispose();
     super.dispose();
+  }
+
+  void _resetRegisterOtpState() {
+    _phoneOtpSent = false;
+    _phoneVerified = false;
+    _sendingPhoneOtp = false;
+    _verifyingPhoneOtp = false;
+    _phoneSandboxCode = null;
+    _verifiedPhone = '';
+    _phoneOtpCtrl.clear();
+
+    _emailOtpSent = false;
+    _emailVerified = false;
+    _sendingEmailOtp = false;
+    _verifyingEmailOtp = false;
+    _emailSandboxCode = null;
+    _verifiedEmail = '';
+    _emailOtpCtrl.clear();
   }
 
   Future<void> _handleLogin() async {
     setState(() {
       _loading = true;
       _error = null;
+      _infoBanner = null;
     });
 
     final attemptedId = _idCtrl.text.trim();
@@ -101,7 +134,6 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
       _passCtrl.clear();
       setState(() {
         _loading = false;
-        _resendInfo = null;
         if (result.requiresEmailVerification && result.pendingEmail != null) {
           _pendingEmail = result.pendingEmail;
           _error = result.message;
@@ -112,9 +144,9 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
             _resetSent = false;
             if (attemptedId.isNotEmpty) _resetCtrl.text = attemptedId;
             _mode = _ConsoleAuthMode.forgot;
-            _error = 'Anda sudah 5x salah memasukkan akun/kata sandi. Silakan pulihkan akses Console Anda.';
+            _error = 'Login gagal 5 kali. Silakan atur ulang kata sandi Anda.';
           } else {
-            _error = '${result.message} (Percobaan $_failedAttempts/5)';
+            _error = '${result.message} ($_failedAttempts/5)';
           }
         }
       });
@@ -122,12 +154,12 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     }
 
     _failedAttempts = 0;
-
     final acc = result.account!;
     widget.appState.login(
       name: acc.fullName,
       email: acc.email,
       username: acc.username,
+      phone: acc.phone,
       role: acc.role,
       superAdmin: acc.isSuperAdmin,
       master: acc.isMaster,
@@ -140,6 +172,7 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     setState(() {
       _loading = true;
       _error = null;
+      _infoBanner = null;
     });
 
     final bio = await BiometricService.authenticateWithBiometrics();
@@ -162,6 +195,7 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
       return;
     }
 
+    _failedAttempts = 0;
     widget.appState.login(
       name: b.fullName,
       email: b.email,
@@ -174,20 +208,137 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     widget.onAuthenticated();
   }
 
+  Future<void> _handleSendPhoneOtp() async {
+    setState(() {
+      _sendingPhoneOtp = true;
+      _error = null;
+      _infoBanner = null;
+    });
+    final res = await OtpService.sendPhoneOtp(_phoneCtrl.text);
+    if (!mounted) return;
+    setState(() {
+      _sendingPhoneOtp = false;
+      if (res.success) {
+        _phoneOtpSent = true;
+        _phoneSandboxCode = res.sandboxPreviewCode;
+        _infoBanner = res.message;
+      } else {
+        _error = res.message;
+      }
+    });
+  }
+
+  Future<void> _handleVerifyPhoneOtp() async {
+    setState(() {
+      _verifyingPhoneOtp = true;
+      _error = null;
+      _infoBanner = null;
+    });
+    final res = await OtpService.verifyPhoneOtp(
+      rawPhone: _phoneCtrl.text,
+      token: _phoneOtpCtrl.text,
+    );
+    if (!mounted) return;
+    setState(() {
+      _verifyingPhoneOtp = false;
+      if (res.success) {
+        _phoneVerified = true;
+        _phoneOtpSent = false;
+        _phoneSandboxCode = null;
+        _verifiedPhone = OtpService.normalizeIndonesianPhone(_phoneCtrl.text) ?? _phoneCtrl.text.trim();
+        _phoneOtpCtrl.clear();
+        _infoBanner = 'Nomor WhatsApp terverifikasi. Lanjutkan verifikasi email LPK.';
+      } else {
+        _error = res.message;
+      }
+    });
+  }
+
+  Future<void> _handleSendEmailOtp() async {
+    if (!_phoneVerified) {
+      setState(() => _error = 'Verifikasi OTP Nomor WhatsApp resmi LPK terlebih dahulu.');
+      return;
+    }
+    setState(() {
+      _sendingEmailOtp = true;
+      _error = null;
+      _infoBanner = null;
+    });
+    final res = await OtpService.sendEmailOtp(
+      rawEmail: _regEmailCtrl.text,
+      flavor: AppFlavor.console,
+    );
+    if (!mounted) return;
+    setState(() {
+      _sendingEmailOtp = false;
+      if (res.success) {
+        _emailOtpSent = true;
+        _emailSandboxCode = res.sandboxPreviewCode;
+        _infoBanner = res.message;
+      } else {
+        _error = res.message;
+      }
+    });
+  }
+
+  Future<void> _handleVerifyEmailOtp() async {
+    setState(() {
+      _verifyingEmailOtp = true;
+      _error = null;
+      _infoBanner = null;
+    });
+    final res = await OtpService.verifyEmailOtp(
+      rawEmail: _regEmailCtrl.text,
+      token: _emailOtpCtrl.text,
+    );
+    if (!mounted) return;
+    setState(() {
+      _verifyingEmailOtp = false;
+      if (res.success) {
+        _emailVerified = true;
+        _emailOtpSent = false;
+        _emailSandboxCode = null;
+        _verifiedEmail = _regEmailCtrl.text.trim().toLowerCase();
+        _emailOtpCtrl.clear();
+        _infoBanner = 'WhatsApp dan email terverifikasi. Lengkapi data LPK dan kata sandi.';
+      } else {
+        _error = res.message;
+      }
+    });
+  }
+
   Future<void> _handleRegisterLpk() async {
+    if (!_phoneVerified || !_emailVerified) {
+      setState(() => _error = 'Verifikasi OTP Nomor WhatsApp dan OTP Email terlebih dahulu.');
+      return;
+    }
+    if (_lpkNameCtrl.text.trim().isEmpty ||
+        _cityCtrl.text.trim().isEmpty ||
+        _licenseCtrl.text.trim().isEmpty ||
+        _ownerNameCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Lengkapi nama LPK, kota, nomor izin Kemnaker, dan nama penanggung jawab.');
+      return;
+    }
+
     setState(() {
       _loading = true;
       _error = null;
+      _infoBanner = null;
     });
 
-    final result = await AuthService.registerLpkApplicant(
-      lpkName: _lpkNameCtrl.text,
-      city: _cityCtrl.text,
-      licenseNumber: _licenseCtrl.text,
-      ownerName: _ownerNameCtrl.text,
-      phone: _phoneCtrl.text,
-      email: _idCtrl.text,
+    final branchName = _lpkNameCtrl.text.trim();
+    final result = await AuthService.completeOtpRegistration(
+      fullName: '${_ownerNameCtrl.text.trim()} ($branchName)',
+      verifiedPhone: _verifiedPhone,
+      verifiedEmail: _verifiedEmail,
       password: _passCtrl.text,
+      role: UserRole.admin,
+      isLpkApplicant: true,
+      extraMetadata: {
+        'lpk_name': branchName,
+        'city': _cityCtrl.text.trim(),
+        'license_number': _licenseCtrl.text.trim(),
+      },
     );
     if (!mounted) return;
 
@@ -199,20 +350,29 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
       return;
     }
 
-    final branchName = _lpkNameCtrl.text.trim();
     widget.appState.registerLpkBranch(
       name: branchName,
       city: _cityCtrl.text.trim(),
       licenseNumber: _licenseCtrl.text.trim(),
       ownerName: _ownerNameCtrl.text.trim(),
-      ownerPhone: _phoneCtrl.text.trim().isEmpty ? '-' : _phoneCtrl.text.trim(),
+      ownerPhone: _verifiedPhone,
     );
+
+    final createdEmail = _verifiedEmail;
+    _resetRegisterOtpState();
+    _lpkNameCtrl.clear();
+    _cityCtrl.clear();
+    _licenseCtrl.clear();
+    _ownerNameCtrl.clear();
+    _phoneCtrl.clear();
+    _regEmailCtrl.clear();
+    _passCtrl.clear();
+    _idCtrl.text = createdEmail;
 
     setState(() {
       _loading = false;
-      _lpkSubmitted = true;
-      _submittedLpkName = branchName;
-      _pendingEmail = result.pendingEmail ?? _idCtrl.text.trim().toLowerCase();
+      _mode = _ConsoleAuthMode.login;
+      _infoBanner = result.message;
     });
   }
 
@@ -221,14 +381,14 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     setState(() {
       _resending = true;
       _error = null;
-      _resendInfo = null;
+      _infoBanner = null;
     });
     final res = await AuthService.resendVerificationEmail(email: email, flavor: AppFlavor.console);
     if (!mounted) return;
     setState(() {
       _resending = false;
       if (res.success) {
-        _resendInfo = res.message;
+        _infoBanner = res.message;
       } else {
         _error = res.message;
       }
@@ -256,8 +416,6 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width >= 820;
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -309,17 +467,8 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: isWide ? 920 : 440),
-                    child: isWide
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Expanded(flex: 5, child: _buildGovernancePanel()),
-                              const SizedBox(width: 24),
-                              Expanded(flex: 5, child: _buildAuthCard(compactHeader: true)),
-                            ],
-                          )
-                        : _buildAuthCard(compactHeader: false),
+                    constraints: const BoxConstraints(maxWidth: 420),
+                    child: _buildAuthCard(),
                   ),
                 ),
               ),
@@ -330,86 +479,7 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     );
   }
 
-  Widget _buildGovernancePanel() {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white, width: 2),
-        boxShadow: [
-          BoxShadow(color: _indigo.withValues(alpha: 0.10), blurRadius: 32, offset: const Offset(0, 14)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          AuthComponents.logoBanner(width: 200, height: 120, fallbackColor: _crimson),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(colors: [_crimson, _indigo]),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              'CIJ COMMAND CENTER • HOLDING & LPK',
-              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.7),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Pusat Kendali Otoritas\nINDOTECH & Jaringan LPK',
-            style: TextStyle(color: AuthComponents.textMain, fontSize: 22, fontWeight: FontWeight.w900, height: 1.2),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Kelola verifikasi cabang LPK berizin Kemnaker, audit KYC Mitra Driver ber-rem ganda, dan transparansi Smart Split 60/27/13.',
-            style: TextStyle(color: AuthComponents.textMuted, fontSize: 12.5, height: 1.45),
-          ),
-          const SizedBox(height: 18),
-          _tierRow('1', 'INDOTECH (Master)', 'Otoritas tertinggi: verifikasi LPK, approval Super Admin & fee 13%', _crimson),
-          const SizedBox(height: 10),
-          _tierRow('2', 'LPK (Super Admin)', 'Operasional cabang: KYC Mitra, kelulusan & E-Sertifikat, omzet 27%', _indigo),
-          const SizedBox(height: 10),
-          _tierRow('3', 'Mitra Driver (CIJ Partner)', 'Aplikasi terpisah di cij-partner.vercel.app (insentif 60%)', AppColors.emerald),
-          const SizedBox(height: 10),
-          _tierRow('4', 'Konsumen / Siswa (CIJ Driving)', 'Aplikasi terpisah di cij-driving.vercel.app', _gold),
-        ],
-      ),
-    );
-  }
-
-  Widget _tierRow(String num, String title, String subtitle, Color color) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 26,
-          height: 26,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.14),
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: color.withValues(alpha: 0.4)),
-          ),
-          child: Text(num, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w900)),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(title, style: const TextStyle(color: AuthComponents.textMain, fontSize: 12.5, fontWeight: FontWeight.w800)),
-              Text(subtitle, style: const TextStyle(color: AuthComponents.textMuted, fontSize: 11, height: 1.3)),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAuthCard({required bool compactHeader}) {
+  Widget _buildAuthCard() {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
       decoration: BoxDecoration(
@@ -425,29 +495,18 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 5,
-            margin: const EdgeInsets.only(bottom: 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              gradient: const LinearGradient(colors: [_crimson, _indigo, _gold]),
-            ),
-          ),
-          if (!compactHeader) ...[
-            AuthComponents.logoBanner(width: 204, height: 124, fallbackColor: _crimson),
-            const SizedBox(height: 4),
-          ],
+          AuthComponents.logoBanner(width: 210, height: 128, fallbackColor: _crimson),
+          const SizedBox(height: 4),
           AuthComponents.appTitle('CIJ Master'),
           if (_mode == _ConsoleAuthMode.registerLpk) ...[
             const SizedBox(height: 4),
             const Text(
-              'Pendaftaran Cabang LPK / Super Admin Baru',
+              'Daftar LPK Baru',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AuthComponents.textMuted, fontSize: 11.5, fontWeight: FontWeight.w600),
+              style: TextStyle(color: AuthComponents.textMuted, fontSize: 12.5, fontWeight: FontWeight.w500),
             ),
           ],
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
 
           if (_error != null) ...[
             AuthComponents.errorBanner(_error!),
@@ -471,13 +530,12 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
               ),
             ],
           ],
-          if (_resendInfo != null && _mode == _ConsoleAuthMode.login)
-            AuthComponents.infoBanner(_resendInfo!, color: AppColors.emerald),
+          if (_infoBanner != null) AuthComponents.infoBanner(_infoBanner!, color: AppColors.emerald),
 
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 240),
             child: KeyedSubtree(
-              key: ValueKey('${_mode.name}-$_resetSent-$_lpkSubmitted'),
+              key: ValueKey('${_mode.name}-$_resetSent'),
               child: _mode == _ConsoleAuthMode.login
                   ? _buildLoginForm()
                   : _mode == _ConsoleAuthMode.registerLpk
@@ -487,12 +545,12 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            AppVersions.console.fullLabel,
+            AppVersions.console.shortLabel,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AuthComponents.textMuted,
               fontSize: 10.5,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ],
@@ -507,27 +565,25 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AuthComponents.fieldLabel('Username / Email Otoritas'),
-        const SizedBox(height: 7),
+        AuthComponents.fieldLabel('Username atau Email'),
+        const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _idCtrl,
-          hint: 'INDOTECH / superadmin',
+          hint: 'Masukkan username atau email',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
           keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icons.admin_panel_settings_outlined,
+          prefixIcon: Icons.person_outline_rounded,
         ),
         const SizedBox(height: 14),
 
         AuthComponents.fieldLabel('Kata Sandi'),
-        const SizedBox(height: 7),
+        const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _passCtrl,
-          hint: '••••••••••••',
+          hint: 'Masukkan kata sandi',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
           obscure: _obscurePassword,
           prefixIcon: Icons.lock_outline_rounded,
           onSubmitted: (_) {
@@ -542,21 +598,40 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
             onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
           ),
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerRight,
+          child: GestureDetector(
+            onTap: () => setState(() {
+              _error = null;
+              _infoBanner = null;
+              _resetSent = false;
+              _mode = _ConsoleAuthMode.forgot;
+            }),
+            child: const Text(
+              'Lupa kata sandi?',
+              style: TextStyle(
+                color: _indigo,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
 
         AuthComponents.gradientButton(
-          label: _loading ? 'Memverifikasi Otoritas...' : 'Masuk ke CIJ Master',
-          icon: Icons.workspace_premium_rounded,
+          label: _loading ? 'Memproses...' : 'Masuk',
           onTap: _loading ? null : _handleLogin,
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
 
         Center(
           child: GestureDetector(
             onTap: () => setState(() {
               _error = null;
-              _resendInfo = null;
-              _lpkSubmitted = false;
+              _infoBanner = null;
+              _resetRegisterOtpState();
               _mode = _ConsoleAuthMode.registerLpk;
             }),
             child: const Text(
@@ -564,36 +639,12 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
               style: TextStyle(
                 color: _indigo,
                 fontSize: 13,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
         ),
-        const SizedBox(height: 10),
-
-        Center(
-          child: GestureDetector(
-            onTap: () => setState(() {
-              _error = null;
-              _resetSent = false;
-              _mode = _ConsoleAuthMode.forgot;
-            }),
-            child: RichText(
-              textAlign: TextAlign.center,
-              text: const TextSpan(
-                text: 'Lupa kredensial Console? ',
-                style: TextStyle(color: AuthComponents.textMuted, fontSize: 11.5),
-                children: [
-                  TextSpan(
-                    text: 'Pemulihan akun.',
-                    style: TextStyle(color: _indigo, fontWeight: FontWeight.w800),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
 
         AuthComponents.biometricButton(
           bioActive: bioActive,
@@ -607,141 +658,177 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
   }
 
   Widget _buildRegisterLpkForm() {
-    if (_lpkSubmitted) {
-      return AuthComponents.emailVerificationView(
-        email: _pendingEmail ?? _idCtrl.text.trim(),
-        accentColor: _indigo,
-        title: 'Verifikasi Email & Antrean Master',
-        subtitle:
-            'Pengajuan $_submittedLpkName terkirim! Konfirmasi email resmi LPK Anda sekarang, lalu tunggu persetujuan izin Kemnaker oleh MASTER INDOTECH.',
-        resending: _resending,
-        resendInfo: _resendInfo,
-        onResend: _handleResendVerification,
-        onBackToLogin: () => setState(() {
-          _lpkSubmitted = false;
-          _error = null;
-          _resendInfo = null;
-          _passCtrl.clear();
-          _mode = _ConsoleAuthMode.login;
-        }),
-      );
-    }
+    final bothVerified = _phoneVerified && _emailVerified;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AuthComponents.infoBanner(
-          'Pendaftaran Super Admin / LPK baru wajib diverifikasi oleh MASTER INDOTECH sebelum aktif.',
-          color: _indigo,
+        AuthComponents.fieldLabel('Nomor WhatsApp LPK'),
+        const SizedBox(height: 6),
+        AuthComponents.softInput(
+          controller: _phoneCtrl,
+          hint: '0811-xxxx-xxxx',
+          accentColor: _indigo,
+          borderTint: _phoneVerified ? AppColors.emerald : _indigoBorder,
+          fillColor: Colors.white,
+          enabled: !_phoneVerified,
+          keyboardType: TextInputType.phone,
+          prefixIcon: Icons.phone_outlined,
+          suffix: AuthComponents.otpFieldSuffix(
+            verified: _phoneVerified,
+            sending: _sendingPhoneOtp,
+            enabled: true,
+            accentColor: _indigo,
+            onSendOtp: _handleSendPhoneOtp,
+            onChangeTarget: () => setState(() {
+              _phoneVerified = false;
+              _phoneOtpSent = false;
+              _emailVerified = false;
+              _emailOtpSent = false;
+              _error = null;
+              _infoBanner = null;
+            }),
+          ),
         ),
+        if (_phoneOtpSent && !_phoneVerified)
+          AuthComponents.otpVerifyBox(
+            title: 'Kode OTP WhatsApp',
+            otpController: _phoneOtpCtrl,
+            accentColor: _indigo,
+            borderTint: _indigoBorder,
+            verifying: _verifyingPhoneOtp,
+            resending: _sendingPhoneOtp,
+            sandboxCode: _phoneSandboxCode,
+            onVerify: _handleVerifyPhoneOtp,
+            onResend: _handleSendPhoneOtp,
+          ),
+        const SizedBox(height: 12),
 
-        AuthComponents.fieldLabel('Nama Lembaga / LPK'),
+        AuthComponents.fieldLabel('Email LPK'),
+        const SizedBox(height: 6),
+        AuthComponents.softInput(
+          controller: _regEmailCtrl,
+          hint: 'admin@lpk-cabang.id',
+          accentColor: _indigo,
+          borderTint: _emailVerified ? AppColors.emerald : _indigoBorder,
+          fillColor: Colors.white,
+          enabled: _phoneVerified && !_emailVerified,
+          keyboardType: TextInputType.emailAddress,
+          prefixIcon: Icons.email_outlined,
+          suffix: AuthComponents.otpFieldSuffix(
+            verified: _emailVerified,
+            sending: _sendingEmailOtp,
+            enabled: _phoneVerified,
+            accentColor: _indigo,
+            onSendOtp: _handleSendEmailOtp,
+            onChangeTarget: () => setState(() {
+              _emailVerified = false;
+              _emailOtpSent = false;
+              _error = null;
+              _infoBanner = null;
+            }),
+          ),
+        ),
+        if (_emailOtpSent && !_emailVerified)
+          AuthComponents.otpVerifyBox(
+            title: 'Kode OTP Email',
+            otpController: _emailOtpCtrl,
+            accentColor: _indigo,
+            borderTint: _indigoBorder,
+            verifying: _verifyingEmailOtp,
+            resending: _sendingEmailOtp,
+            sandboxCode: _emailSandboxCode,
+            onVerify: _handleVerifyEmailOtp,
+            onResend: _handleSendEmailOtp,
+          ),
+        const SizedBox(height: 12),
+
+        AuthComponents.fieldLabel('Nama LPK'),
         const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _lpkNameCtrl,
-          hint: 'Contoh: LPK Karya Mandiri Mengemudi',
+          hint: 'Masukkan nama lembaga',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
+          fillColor: Colors.white,
+          enabled: bothVerified,
           prefixIcon: Icons.apartment_rounded,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
-        AuthComponents.fieldLabel('Kota / Kabupaten Operasional'),
+        AuthComponents.fieldLabel('Kota / Kabupaten'),
         const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _cityCtrl,
-          hint: 'Contoh: Purwokerto, Banyumas',
+          hint: 'Contoh: Banyumas',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
+          fillColor: Colors.white,
+          enabled: bothVerified,
           prefixIcon: Icons.location_city_rounded,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
-        AuthComponents.fieldLabel('Nomor Izin LPK Kemnaker / NIB'),
+        AuthComponents.fieldLabel('Nomor Izin Kemnaker / NIB'),
         const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _licenseCtrl,
           hint: 'KEMNAKER/563/LPK/2026',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
+          fillColor: Colors.white,
+          enabled: bothVerified,
           prefixIcon: Icons.gavel_rounded,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
-        AuthComponents.fieldLabel('Nama Penanggung Jawab (Super Admin LPK)'),
+        AuthComponents.fieldLabel('Penanggung Jawab'),
         const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _ownerNameCtrl,
-          hint: 'Nama lengkap pimpinan / admin LPK',
+          hint: 'Nama pimpinan / admin LPK',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
+          fillColor: Colors.white,
+          enabled: bothVerified,
           prefixIcon: Icons.person_outline_rounded,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
 
-        AuthComponents.fieldLabel('Nomor WhatsApp Resmi LPK'),
-        const SizedBox(height: 6),
-        AuthComponents.softInput(
-          controller: _phoneCtrl,
-          hint: '0811-xxxx-xxxx',
-          accentColor: _indigo,
-          borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
-          keyboardType: TextInputType.phone,
-          prefixIcon: Icons.phone_outlined,
-        ),
-        const SizedBox(height: 10),
-
-        AuthComponents.fieldLabel('Email Resmi LPK'),
-        const SizedBox(height: 6),
-        AuthComponents.softInput(
-          controller: _idCtrl,
-          hint: 'admin@lpk-cabang.id',
-          accentColor: _indigo,
-          borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
-          keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icons.email_outlined,
-        ),
-        const SizedBox(height: 10),
-
-        AuthComponents.fieldLabel('Buat Kata Sandi Akun LPK'),
+        AuthComponents.fieldLabel('Kata Sandi'),
         const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _passCtrl,
           hint: 'Minimal 6 karakter',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
+          fillColor: Colors.white,
+          enabled: bothVerified,
           obscure: _obscurePassword,
           prefixIcon: Icons.lock_outline_rounded,
-          suffix: IconButton(
-            icon: Icon(
-              _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-              color: AuthComponents.textMuted,
-              size: 20,
-            ),
-            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
-          ),
+          suffix: bothVerified
+              ? IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                    color: AuthComponents.textMuted,
+                    size: 20,
+                  ),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                )
+              : null,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 20),
 
         AuthComponents.gradientButton(
-          label: _loading ? 'Mengirim Pengajuan...' : 'Ajukan Pendaftaran LPK Baru',
-          icon: Icons.domain_add_rounded,
-          onTap: _loading ? null : _handleRegisterLpk,
+          label: _loading ? 'Memproses...' : 'Ajukan Pendaftaran',
+          onTap: (_loading || !bothVerified) ? null : _handleRegisterLpk,
         ),
         const SizedBox(height: 14),
         Center(
           child: GestureDetector(
             onTap: () => setState(() {
               _error = null;
-              _resendInfo = null;
-              _lpkSubmitted = false;
+              _infoBanner = null;
               _mode = _ConsoleAuthMode.login;
             }),
             child: RichText(
@@ -750,8 +837,8 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
                 style: TextStyle(color: AuthComponents.textMuted, fontSize: 12),
                 children: [
                   TextSpan(
-                    text: 'Masuk ke CIJ Master',
-                    style: TextStyle(color: _indigo, fontWeight: FontWeight.w800),
+                    text: 'Masuk',
+                    style: TextStyle(color: _indigo, fontWeight: FontWeight.w700),
                   ),
                 ],
               ),
@@ -768,33 +855,32 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
         children: [
           const SizedBox(height: 6),
           Container(
-            width: 64,
-            height: 64,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.emerald.withValues(alpha: 0.14),
-              border: Border.all(color: AppColors.emerald, width: 2),
+              color: AppColors.emerald.withValues(alpha: 0.12),
+              border: Border.all(color: AppColors.emerald, width: 1.5),
             ),
-            child: const Icon(Icons.mark_email_read_rounded, color: AppColors.emerald, size: 32),
+            child: const Icon(Icons.mark_email_read_rounded, color: AppColors.emerald, size: 28),
           ),
           const SizedBox(height: 14),
           const Text(
-            'Tautan Pemulihan Terkirim!',
-            style: TextStyle(color: AuthComponents.textMain, fontSize: 16.5, fontWeight: FontWeight.w800),
+            'Tautan Reset Terkirim',
+            style: TextStyle(color: AuthComponents.textMain, fontSize: 16, fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 6),
           Text(
-            'Instruksi reset kredensial Console telah dikirim ke ${_resetCtrl.text.trim()}.',
+            'Instruksi pengaturan ulang kata sandi telah dikirim ke ${_resetCtrl.text.trim()}.',
             textAlign: TextAlign.center,
             style: const TextStyle(color: AuthComponents.textMuted, fontSize: 12, height: 1.4),
           ),
           const SizedBox(height: 20),
           AuthComponents.gradientButton(
-            label: 'Kembali ke Masuk Console',
-            gradientColors: const [_crimson, _indigo],
-            shadowColor: _indigo,
+            label: 'Kembali ke Halaman Masuk',
             onTap: () => setState(() {
               _resetSent = false;
+              _error = null;
               _mode = _ConsoleAuthMode.login;
             }),
           ),
@@ -806,30 +892,27 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Pemulihan Akses Command Center',
-          style: TextStyle(color: AuthComponents.textMain, fontSize: 14, fontWeight: FontWeight.w800),
+          'Lupa Kata Sandi',
+          style: TextStyle(color: AuthComponents.textMain, fontSize: 15, fontWeight: FontWeight.w800),
         ),
         const SizedBox(height: 6),
         const Text(
-          'Masukkan email resmi Master INDOTECH atau Super Admin LPK untuk menerima tautan reset.',
-          style: TextStyle(color: AuthComponents.textMuted, fontSize: 11.5, height: 1.4),
+          'Masukkan email akun Master atau Admin LPK yang terdaftar untuk mengatur ulang kata sandi.',
+          style: TextStyle(color: AuthComponents.textMuted, fontSize: 12, height: 1.4),
         ),
         const SizedBox(height: 14),
-        AuthComponents.fieldLabel('Email Resmi Console'),
+        AuthComponents.fieldLabel('Email'),
         const SizedBox(height: 6),
         AuthComponents.softInput(
           controller: _resetCtrl,
-          hint: 'superadmin@lpk-cij.id',
+          hint: 'nama@email.com',
           accentColor: _indigo,
           borderTint: _indigoBorder,
-          fillColor: const Color(0xFFFAF9FF),
           prefixIcon: Icons.mark_email_unread_outlined,
         ),
         const SizedBox(height: 18),
         AuthComponents.gradientButton(
-          label: _loading ? 'Mengirim...' : 'Kirim Tautan Pemulihan',
-          gradientColors: const [_crimson, _indigo],
-          shadowColor: _indigo,
+          label: _loading ? 'Mengirim...' : 'Kirim Tautan Reset',
           onTap: _loading ? null : _handleForgot,
         ),
         const SizedBox(height: 14),
@@ -840,8 +923,8 @@ class _ConsoleAuthScreenState extends State<ConsoleAuthScreen> {
               _mode = _ConsoleAuthMode.login;
             }),
             child: const Text(
-              '← Kembali ke Masuk Console',
-              style: TextStyle(color: _indigo, fontSize: 12, fontWeight: FontWeight.w800),
+              'Kembali ke Halaman Masuk',
+              style: TextStyle(color: _indigo, fontSize: 12.5, fontWeight: FontWeight.w700),
             ),
           ),
         ),

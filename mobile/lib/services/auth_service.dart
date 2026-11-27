@@ -589,4 +589,86 @@ class AuthService {
       message: 'Email verifikasi telah dikirim ulang ke $cleanEmail.',
     );
   }
+
+  /// Finalizes account creation ONLY AFTER both Phone OTP and Email OTP are verified.
+  /// Sets the user's password + metadata on the Supabase-verified user and signs out
+  /// so the user can cleanly sign in with their new credentials.
+  static Future<AuthResult> completeOtpRegistration({
+    required String fullName,
+    required String verifiedPhone,
+    required String verifiedEmail,
+    required String password,
+    required UserRole role,
+    bool isLpkApplicant = false,
+    Map<String, dynamic>? extraMetadata,
+  }) async {
+    final cleanName = fullName.trim();
+    final cleanEmail = verifiedEmail.trim().toLowerCase();
+    final cleanPhone = verifiedPhone.trim();
+
+    if (cleanName.isEmpty) {
+      return const AuthResult(success: false, message: 'Nama lengkap wajib diisi.');
+    }
+    if (password.length < 6) {
+      return const AuthResult(success: false, message: 'Kata sandi minimal 6 karakter.');
+    }
+
+    final metadata = <String, dynamic>{
+      'full_name': cleanName,
+      'phone': cleanPhone,
+      'role': isLpkApplicant ? 'lpk_admin' : role.name,
+      'phone_verified': true,
+      'email_verified': true,
+      if (isLpkApplicant) 'verified_by_master': false,
+      ...?extraMetadata,
+    };
+
+    final client = _trySupabaseClient();
+    if (client != null) {
+      try {
+        if (client.auth.currentUser != null) {
+          await client.auth.updateUser(
+            UserAttributes(password: password, data: metadata),
+          );
+          await client.auth.signOut();
+        } else {
+          await client.auth.signUp(
+            email: cleanEmail,
+            password: password,
+            data: metadata,
+          );
+        }
+      } on AuthException catch (e) {
+        return AuthResult(success: false, message: _friendlySupabaseError(e));
+      } catch (_) {
+        return const AuthResult(
+          success: false,
+          message: 'Gagal menyimpan akun ke server. Periksa koneksi internet Anda.',
+        );
+      }
+    }
+
+    final username = cleanEmail.contains('@') ? cleanEmail.split('@').first : cleanEmail;
+    final created = ManagedAccount(
+      username: username,
+      email: cleanEmail,
+      fullName: cleanName,
+      phone: cleanPhone,
+      passwordHash: hashPassword(password),
+      role: role,
+      isSuperAdmin: isLpkApplicant,
+      isMaster: false,
+      verifiedByMaster: !isLpkApplicant,
+    );
+    _accounts.removeWhere((a) => a.email.toLowerCase() == cleanEmail);
+    _accounts.add(created);
+
+    return AuthResult(
+      success: true,
+      account: created,
+      message: isLpkApplicant
+          ? 'Akun LPK $cleanName dibuat & menunggu persetujuan MASTER INDOTECH!'
+          : 'Akun $cleanName berhasil dibuat! Silakan masuk dengan email & kata sandi Anda.',
+    );
+  }
 }

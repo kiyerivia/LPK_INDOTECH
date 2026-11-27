@@ -18,33 +18,33 @@ class AppVersionInfo {
     required this.releaseDate,
   });
 
-  String get fullLabel => '$appName v$version ($channel • Build #$buildNumber)';
-  String get shortLabel => 'v$version-$channel • #$buildNumber';
+  String get fullLabel => '$appName v$version ($channel Build #$buildNumber)';
+  String get shortLabel => 'v$version-$channel';
 }
 
 class AppVersions {
   static const AppVersionInfo driving = AppVersionInfo(
     appName: 'CIJ Driving',
-    version: '1.1.0',
-    buildNumber: '2',
+    version: '1.2.0',
+    buildNumber: '3',
     channel: 'beta',
-    releaseDate: '24 Nov 2026',
+    releaseDate: '27 Nov 2026',
   );
 
   static const AppVersionInfo partner = AppVersionInfo(
     appName: 'CIJ Mitra',
-    version: '1.1.0',
-    buildNumber: '2',
+    version: '1.2.0',
+    buildNumber: '3',
     channel: 'beta',
-    releaseDate: '24 Nov 2026',
+    releaseDate: '27 Nov 2026',
   );
 
   static const AppVersionInfo console = AppVersionInfo(
     appName: 'CIJ Master',
-    version: '1.1.0',
-    buildNumber: '2',
+    version: '1.2.0',
+    buildNumber: '3',
     channel: 'beta',
-    releaseDate: '24 Nov 2026',
+    releaseDate: '27 Nov 2026',
   );
 
   static AppVersionInfo forFlavor(AppFlavor flavor) {
